@@ -1,5 +1,5 @@
 {
-  "name": "LinkHub MVP",
-  "description": "A Linktree-style link aggregator with dynamic profiles and a management dashboard.",
+  "name": "Linques",
+  "description": "A link aggregator with dynamic profiles and a management dashboard.",
   "requestFramePermissions": []
 }

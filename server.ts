@@ -1,124 +1,147 @@
+import { config } from "dotenv";
+config({ path: ".env.local" });
+
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import db from "./src/db.ts";
+import { createClient } from "@supabase/supabase-js";
 import path from "path";
 import fs from "fs";
 
+// ─── OG Tag Injection ────────────────────────────────────────────────────────
+
+const RESERVED_PATHS = new Set([
+  "dashboard", "entrar", "api", "auth", "admin",
+  "login", "register", "settings", "help",
+]);
+
+function extractUsername(url: string): string | null {
+  const pathname = url.split("?")[0];
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts.length === 1 && !RESERVED_PATHS.has(parts[0])) return parts[0];
+  return null;
+}
+
+function escapeAttr(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function injectOgTags(html: string, profile: ProfileRow): string {
+  const name = profile.display_name || profile.username;
+  const title = escapeAttr(`${name} — linqu.es`);
+  const description = escapeAttr(
+    profile.bio || `Confira os links de ${name} no linqu.es`
+  );
+  const image = profile.avatar_url ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(profile.username)}`;
+  const canonical = `https://linqu.es/${profile.username}`;
+
+  const tags = `
+    <title>${title}</title>
+    <link rel="canonical" href="${escapeAttr(canonical)}" />
+    <meta name="description" content="${description}" />
+    <meta property="og:type" content="profile" />
+    <meta property="og:url" content="${escapeAttr(canonical)}" />
+    <meta property="og:site_name" content="linqu.es" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+    <meta property="og:image" content="${escapeAttr(image)}" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:image" content="${escapeAttr(image)}" />`;
+
+  return html
+    .replace(/<title>[^<]*<\/title>/, "")
+    .replace("</head>", `${tags}\n  </head>`);
+}
+
+// ─── Server-side Supabase client (reads public profile data for OG tags) ────
+
+interface ProfileRow {
+  username: string;
+  display_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+}
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const serverSupabase =
+  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+async function fetchProfileForOg(username: string): Promise<ProfileRow | null> {
+  if (!serverSupabase) return null;
+  const { data } = await serverSupabase
+    .from("profiles")
+    .select("username, display_name, bio, avatar_url")
+    .eq("username", username)
+    .maybeSingle();
+  return data ?? null;
+}
+
+// ─── Express app ─────────────────────────────────────────────────────────────
+
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
-  console.log("Starting server...");
-  try {
-    console.log("DB check:", db.prepare('SELECT 1').get());
-  } catch (e) {
-    console.error("DB check failed:", e);
-  }
-
-  app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`);
-    next();
-  });
-
-  app.use(express.json());
-
-  // Health check
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
-  });
-
-  const RESERVED_USERNAMES = ['admin', 'help', 'settings', 'api', 'auth', 'dashboard', 'login', 'register'];
-
-  // API Routes
-  app.get("/api/profiles/:username", (req, res) => {
-    const { username } = req.params;
-    
-    if (RESERVED_USERNAMES.includes(username.toLowerCase())) {
-      return res.status(404).json({ error: "Reserved username" });
-    }
-
-    const profile = db.prepare('SELECT * FROM profiles WHERE username = ?').get(username) as any;
-    if (!profile) {
-      return res.status(404).json({ error: "Profile not found" });
-    }
-
-    const links = db.prepare('SELECT * FROM links WHERE profile_id = ? ORDER BY sort_order ASC').all(profile.id);
-    
-    res.json({ ...profile, links, theme_config: JSON.parse(profile.theme_config) });
-  });
-
-  // Simple "Auth" simulation - just get the first profile as "current user"
-  app.get("/api/me", (req, res) => {
-    const profile = db.prepare('SELECT * FROM profiles LIMIT 1').get() as any;
-    if (!profile) return res.status(404).json({ error: "No profile" });
-    
-    const links = db.prepare('SELECT * FROM links WHERE profile_id = ? ORDER BY sort_order ASC').all(profile.id);
-    res.json({ ...profile, links, theme_config: JSON.parse(profile.theme_config) });
-  });
-
-  app.post("/api/links", (req, res) => {
-    const { profile_id, title, url, icon_type } = req.body;
-    const maxOrder = db.prepare('SELECT MAX(sort_order) as max_order FROM links WHERE profile_id = ?').get(profile_id) as any;
-    const nextOrder = (maxOrder?.max_order || 0) + 1;
-    
-    const result = db.prepare('INSERT INTO links (profile_id, title, url, icon_type, sort_order) VALUES (?, ?, ?, ?, ?)')
-      .run(profile_id, title, url, icon_type || 'link', nextOrder);
-    
-    res.json({ id: result.lastInsertRowid });
-  });
-
-  app.delete("/api/links/:id", (req, res) => {
-    db.prepare('DELETE FROM links WHERE id = ?').run(req.params.id);
-    res.json({ success: true });
-  });
-
-  app.patch("/api/links/reorder", (req, res) => {
-    const { links } = req.body; // Array of {id, sort_order}
-    const update = db.prepare('UPDATE links SET sort_order = ? WHERE id = ?');
-    const transaction = db.transaction((items) => {
-      for (const item of items) update.run(item.sort_order, item.id);
-    });
-    transaction(links);
-    res.json({ success: true });
-  });
-
-  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
+
     app.use(vite.middlewares);
-    
-    // Manual SPA fallback for development
+
     app.get("*", async (req, res, next) => {
-      const url = req.originalUrl;
-      if (url.startsWith('/api')) return next();
-      
       try {
-        let template = fs.readFileSync(path.resolve(process.cwd(), "index.html"), "utf-8");
-        template = await vite.transformIndexHtml(url, template);
+        let template = fs.readFileSync(
+          path.resolve(process.cwd(), "index.html"),
+          "utf-8"
+        );
+        template = await vite.transformIndexHtml(req.originalUrl, template);
+
+        const username = extractUsername(req.originalUrl);
+        if (username) {
+          const profile = await fetchProfileForOg(username);
+          if (profile) template = injectOgTags(template, profile);
+        }
+
         res.status(200).set({ "Content-Type": "text/html" }).end(template);
       } catch (e: any) {
         vite.ssrFixStacktrace(e);
         next(e);
       }
     });
-    console.log("Vite middleware integrated with manual fallback.");
   } else {
-    const distPath = path.resolve(__dirname, "dist");
+    const distPath = path.resolve(process.cwd(), "dist");
+    const indexPath = path.join(distPath, "index.html");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+
+    app.get("*", async (req, res, next) => {
+      try {
+        let template = fs.readFileSync(indexPath, "utf-8");
+
+        const username = extractUsername(req.originalUrl);
+        if (username) {
+          const profile = await fetchProfileForOg(username);
+          if (profile) template = injectOgTags(template, profile);
+        }
+
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      } catch (e) {
+        next(e);
+      }
     });
-    console.log("Serving static files from dist.");
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
   });
 }
 
-startServer().catch((err) => {
-  console.error("Failed to start server:", err);
-});
+startServer().catch(console.error);

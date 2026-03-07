@@ -1,224 +1,574 @@
-import React, { useEffect, useState } from 'react';
-import { motion, Reorder } from 'motion/react';
-import { Plus, Trash2, GripVertical, ExternalLink, Settings, User, Layout, Link as LinkIcon, Loader2 } from 'lucide-react';
-import { ICON_MAP, type Profile, type Link } from '../types';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Reorder } from 'motion/react';
+import {
+  Plus, Trash2, GripVertical, ExternalLink, Settings,
+  Link as LinkIcon, Layout, Loader2, LogOut, Eye, EyeOff, Save,
+  Check, Palette,
+} from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { loadGoogleFont } from '../lib/fonts';
+import { useAuth } from '../contexts/AuthContext';
+import { ICON_MAP, FONT_OPTIONS, BUTTON_STYLE_OPTIONS, type Profile, type Link } from '../types';
+import { THEMES, getTheme } from '../themes';
 
-export default function Dashboard() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [newLink, setNewLink] = useState({ title: '', url: '', icon_type: 'link' });
-  const [isAdding, setIsAdding] = useState(false);
+type Tab = 'links' | 'theme' | 'appearance' | 'profile';
 
+// ─── Mobile Preview ──────────────────────────────────────────────────────────
+
+function MobilePreview({ profile }: { profile: Profile }) {
   useEffect(() => {
-    fetchMe();
-  }, []);
+    if (profile.font_family) loadGoogleFont(profile.font_family);
+  }, [profile.font_family]);
 
-  async function fetchMe() {
-    try {
-      const res = await fetch('/api/me');
-      const data = await res.json();
-      setProfile(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleAddLink(e: React.FormEvent) {
-    e.preventDefault();
-    if (!profile) return;
-    setIsAdding(true);
-    try {
-      await fetch('/api/links', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newLink, profile_id: profile.id }),
-      });
-      setNewLink({ title: '', url: '', icon_type: 'link' });
-      fetchMe();
-    } finally {
-      setIsAdding(false);
-    }
-  }
-
-  async function handleDeleteLink(id: number) {
-    if (!confirm('Are you sure?')) return;
-    await fetch(`/api/links/${id}`, { method: 'DELETE' });
-    fetchMe();
-  }
-
-  async function handleReorder(newLinks: Link[]) {
-    setProfile(prev => prev ? { ...prev, links: newLinks } : null);
-    const updates = newLinks.map((l, i) => ({ id: l.id, sort_order: i }));
-    await fetch('/api/links/reorder', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ links: updates }),
-    });
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-      </div>
-    );
-  }
-
-  if (!profile) return <div>Error loading profile</div>;
+  const theme = getTheme(profile.theme_id ?? 'default');
+  const isOutline = profile.button_style === 'outline';
+  const btnRadius = {
+    rounded: 'rounded-xl', pill: 'rounded-full',
+    square: 'rounded-none', outline: 'rounded-xl',
+  }[profile.button_style] ?? 'rounded-xl';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col p-6">
-        <div className="flex items-center gap-2 mb-10 px-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">L</div>
-          <span className="font-bold text-slate-900">LinkHub</span>
-        </div>
-        
-        <nav className="flex-1 space-y-1">
-          <NavItem icon={LinkIcon} label="Links" active />
-          <NavItem icon={Layout} label="Appearance" />
-          <NavItem icon={Settings} label="Settings" />
-        </nav>
-
-        <div className="mt-auto p-4 bg-slate-50 rounded-xl">
-          <div className="flex items-center gap-3">
-            <img src={profile.avatar_url} className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
-            <div className="overflow-hidden">
-              <p className="text-sm font-medium text-slate-900 truncate">{profile.display_name}</p>
-              <p className="text-xs text-slate-500 truncate">@{profile.username}</p>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-10">
-        <div className="max-w-4xl mx-auto">
-          <header className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">My Links</h1>
-              <p className="text-slate-500">Manage your public profile links</p>
-            </div>
-            <a 
-              href={`/${profile.username}`} 
-              target="_blank" 
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              View Public Page
-            </a>
-          </header>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Link Editor */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Add New Link Form */}
-              <form onSubmit={handleAddLink} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h3 className="text-sm font-semibold text-slate-900 mb-4 uppercase tracking-wider">Add New Link</h3>
-                <div className="space-y-4">
-                  <input 
-                    type="text" 
-                    placeholder="Title (e.g. My Portfolio)" 
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    value={newLink.title}
-                    onChange={e => setNewLink(prev => ({ ...prev, title: e.target.value }))}
-                    required
-                  />
-                  <input 
-                    type="url" 
-                    placeholder="URL (https://...)" 
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    value={newLink.url}
-                    onChange={e => setNewLink(prev => ({ ...prev, url: e.target.value }))}
-                    required
-                  />
-                  <div className="flex items-center gap-4">
-                    <select 
-                      className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                      value={newLink.icon_type}
-                      onChange={e => setNewLink(prev => ({ ...prev, icon_type: e.target.value }))}
-                    >
-                      <option value="link">Default Link</option>
-                      <option value="github">GitHub</option>
-                      <option value="linkedin">LinkedIn</option>
-                      <option value="twitter">Twitter</option>
-                      <option value="instagram">Instagram</option>
-                      <option value="globe">Website</option>
-                    </select>
-                    <button 
-                      type="submit" 
-                      disabled={isAdding}
-                      className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                      Add
-                    </button>
+    <div
+      className="w-full h-full relative overflow-hidden"
+      style={{ backgroundColor: profile.bg_color, fontFamily: `'${profile.font_family}', sans-serif` }}
+    >
+      {theme.Background && <theme.Background />}
+      <div className="relative h-full overflow-y-auto" style={{ zIndex: 1 }}>
+        <div className="flex flex-col items-center py-10 px-4">
+          <img
+            src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`}
+            className="w-16 h-16 rounded-full border-4 border-white/20 shadow-md mb-2 object-cover"
+            referrerPolicy="no-referrer"
+          />
+          <h1 className="font-bold text-base text-center mb-1" style={{ color: profile.text_color }}>
+            {profile.display_name || profile.username}
+          </h1>
+          {profile.bio && (
+            <p className="text-xs text-center opacity-70 mb-4 max-w-[200px]" style={{ color: profile.text_color }}>
+              {profile.bio}
+            </p>
+          )}
+          <div className="w-full flex flex-col gap-2.5">
+            {profile.links.filter(l => l.is_active).map(link => {
+              const Icon = ICON_MAP[link.icon_type] ?? ICON_MAP.link;
+              return (
+                <div
+                  key={link.id}
+                  className={`flex items-center gap-2 p-2.5 backdrop-blur-sm ${btnRadius} ${isOutline ? 'border-2' : ''}`}
+                  style={{
+                    backgroundColor: isOutline ? 'transparent' : profile.button_color,
+                    color: profile.button_text_color,
+                    borderColor: isOutline ? profile.button_text_color : undefined,
+                  }}
+                >
+                  <div className="p-1 rounded-md bg-white/10">
+                    <Icon className="w-3.5 h-3.5" />
                   </div>
+                  <span className="font-medium text-xs">{link.title}</span>
                 </div>
-              </form>
-
-              {/* Links List */}
-              <Reorder.Group axis="y" values={profile.links} onReorder={handleReorder} className="space-y-3">
-                {profile.links.map(link => (
-                  <Reorder.Item 
-                    key={link.id} 
-                    value={link}
-                    className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4 group"
-                  >
-                    <div className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500">
-                      <GripVertical className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-slate-900 truncate">{link.title}</h4>
-                      <p className="text-xs text-slate-500 truncate">{link.url}</p>
-                    </div>
-                    <button 
-                      onClick={() => handleDeleteLink(link.id)}
-                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </Reorder.Item>
-                ))}
-              </Reorder.Group>
-            </div>
-
-            {/* Preview (Mobile Mockup) */}
-            <div className="hidden lg:block">
-              <div className="sticky top-10">
-                <h3 className="text-sm font-semibold text-slate-900 mb-4 uppercase tracking-wider text-center">Live Preview</h3>
-                <div className="w-[320px] h-[640px] bg-white rounded-[3rem] border-[8px] border-slate-900 shadow-2xl mx-auto overflow-hidden relative">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-10" />
-                  <iframe 
-                    src={`/${profile.username}`} 
-                    className="w-full h-full pointer-events-none"
-                    title="Preview"
-                  />
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
 
-function NavItem({ icon: Icon, label, active = false }: { icon: any, label: string, active?: boolean }) {
+// ─── Links Tab ───────────────────────────────────────────────────────────────
+
+function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
+  const [newTitle, setNewTitle] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+  const [newIcon, setNewIcon] = useState('link');
+  const [adding, setAdding] = useState(false);
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    setAdding(true);
+    const maxOrder = profile.links.reduce((m, l) => Math.max(m, l.sort_order), -1);
+    const { data, error } = await supabase.from('links').insert({
+      profile_id: profile.id,
+      title: newTitle,
+      url: newUrl,
+      icon_type: newIcon,
+      sort_order: maxOrder + 1,
+      is_active: true,
+    }).select().single();
+    if (!error && data) {
+      onProfileChange({ ...profile, links: [...profile.links, data as Link] });
+      setNewTitle('');
+      setNewUrl('');
+      setNewIcon('link');
+    }
+    setAdding(false);
+  }
+
+  async function handleDelete(id: number) {
+    await supabase.from('links').delete().eq('id', id);
+    onProfileChange({ ...profile, links: profile.links.filter(l => l.id !== id) });
+  }
+
+  async function handleToggle(link: Link) {
+    const updated = { ...link, is_active: !link.is_active };
+    await supabase.from('links').update({ is_active: updated.is_active }).eq('id', link.id);
+    onProfileChange({ ...profile, links: profile.links.map(l => l.id === link.id ? updated : l) });
+  }
+
+  async function handleReorder(newLinks: Link[]) {
+    const reordered = newLinks.map((l, i) => ({ ...l, sort_order: i }));
+    onProfileChange({ ...profile, links: reordered });
+    await Promise.all(
+      reordered.map(l => supabase.from('links').update({ sort_order: l.sort_order }).eq('id', l.id))
+    );
+  }
+
   return (
-    <button className={clsx(
-      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-      active ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-    )}>
-      <Icon className="w-4 h-4" />
-      {label}
-    </button>
+    <div className="space-y-6">
+      <form onSubmit={handleAdd} className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
+        <h3 className="text-sm font-semibold text-slate-700">Novo link</h3>
+        <input
+          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          placeholder="Título"
+          value={newTitle}
+          onChange={e => setNewTitle(e.target.value)}
+          required
+        />
+        <input
+          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          placeholder="URL (https://...)"
+          type="url"
+          value={newUrl}
+          onChange={e => setNewUrl(e.target.value)}
+          required
+        />
+        <div className="flex gap-2">
+          <select
+            className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            value={newIcon}
+            onChange={e => setNewIcon(e.target.value)}
+          >
+            {Object.keys(ICON_MAP).map(k => (
+              <option key={k} value={k}>{k}</option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            disabled={adding}
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          >
+            {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            Adicionar
+          </button>
+        </div>
+      </form>
+
+      <Reorder.Group axis="y" values={profile.links} onReorder={handleReorder} className="space-y-2">
+        {profile.links.map(link => {
+          const Icon = ICON_MAP[link.icon_type] ?? ICON_MAP.link;
+          return (
+            <Reorder.Item
+              key={link.id}
+              value={link}
+              className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm cursor-grab active:cursor-grabbing"
+            >
+              <GripVertical className="w-4 h-4 text-slate-300 flex-shrink-0" />
+              <div className="p-1.5 rounded-lg bg-slate-100">
+                <Icon className="w-4 h-4 text-slate-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-800 truncate">{link.title}</p>
+                <p className="text-xs text-slate-400 truncate">{link.url}</p>
+              </div>
+              <button
+                onClick={() => handleToggle(link)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                {link.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => handleDelete(link.id)}
+                className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </Reorder.Item>
+          );
+        })}
+      </Reorder.Group>
+    </div>
   );
 }
 
-function clsx(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
+// ─── Appearance Tab ───────────────────────────────────────────────────────────
+
+function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    await supabase.from('profiles').update({
+      bg_color: profile.bg_color,
+      text_color: profile.text_color,
+      button_color: profile.button_color,
+      button_text_color: profile.button_text_color,
+      button_style: profile.button_style,
+      font_family: profile.font_family,
+    }).eq('id', profile.id);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  function update(key: keyof Profile, value: string) {
+    onProfileChange({ ...profile, [key]: value });
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold text-slate-700">Cores</h3>
+        {[
+          { label: 'Fundo da página', key: 'bg_color' },
+          { label: 'Cor do texto', key: 'text_color' },
+          { label: 'Fundo dos botões', key: 'button_color' },
+          { label: 'Texto dos botões', key: 'button_text_color' },
+        ].map(({ label, key }) => (
+          <label key={key} className="flex flex-col gap-2 cursor-pointer">
+            <span className="text-xs font-medium text-slate-600">{label}</span>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={(profile as any)[key]?.startsWith('#') ? (profile as any)[key] : '#ffffff'}
+                onChange={e => update(key as keyof Profile, e.target.value)}
+                className="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5"
+              />
+              <input
+                type="text"
+                value={(profile as any)[key] ?? ''}
+                onChange={e => update(key as keyof Profile, e.target.value)}
+                className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono"
+              />
+            </div>
+          </label>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+        <h3 className="text-sm font-semibold text-slate-700">Estilo dos botões</h3>
+        <div className="grid grid-cols-2 gap-2">
+          {BUTTON_STYLE_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => update('button_style', opt.value)}
+              className={`py-2 px-3 text-sm border-2 transition-colors ${opt.class} ${
+                profile.button_style === opt.value
+                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-medium'
+                  : 'border-slate-200 text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+        <h3 className="text-sm font-semibold text-slate-700">Fonte</h3>
+        <div className="grid grid-cols-2 gap-2">
+          {FONT_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => { update('font_family', opt.value); loadGoogleFont(opt.value); }}
+              className={`py-2 px-3 text-sm border-2 rounded-lg transition-colors ${
+                profile.font_family === opt.value
+                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-medium'
+                  : 'border-slate-200 text-slate-600 hover:border-slate-300'
+              }`}
+              style={{ fontFamily: `'${opt.value}', sans-serif` }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+      >
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+        {saved ? 'Salvo!' : 'Salvar aparência'}
+      </button>
+    </div>
+  );
+}
+
+// ─── Theme Tab ────────────────────────────────────────────────────────────────
+
+function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSelect(themeId: string) {
+    const theme = THEMES.find(t => t.id === themeId);
+    if (!theme) return;
+    const updated: Profile = {
+      ...profile,
+      theme_id: themeId,
+      ...(theme.defaults ?? {}),
+    };
+    onProfileChange(updated);
+    setSaving(true);
+    await supabase.from('profiles').update({
+      theme_id: themeId,
+      bg_color: updated.bg_color,
+      text_color: updated.text_color,
+      button_color: updated.button_color,
+      button_text_color: updated.button_text_color,
+      button_style: updated.button_style,
+      font_family: updated.font_family,
+    }).eq('id', profile.id);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-slate-500">Escolha um tema para aplicar cores e efeitos pré-definidos.</p>
+      {saving && (
+        <div className="flex items-center gap-2 text-sm text-indigo-600">
+          <Loader2 className="w-4 h-4 animate-spin" /> Aplicando tema...
+        </div>
+      )}
+      {saved && (
+        <div className="flex items-center gap-2 text-sm text-green-600">
+          <Check className="w-4 h-4" /> Tema aplicado!
+        </div>
+      )}
+      <div className="grid grid-cols-1 gap-3">
+        {THEMES.map(theme => (
+          <button
+            key={theme.id}
+            onClick={() => handleSelect(theme.id)}
+            className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${
+              profile.theme_id === theme.id
+                ? 'border-indigo-500 bg-indigo-50'
+                : 'border-slate-200 hover:border-slate-300 bg-white'
+            }`}
+          >
+            <div
+              className="w-12 h-12 rounded-xl flex-shrink-0 shadow-sm"
+              style={theme.previewStyle as React.CSSProperties}
+            />
+            <div>
+              <p className="text-sm font-semibold text-slate-800">{theme.name}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{theme.description}</p>
+            </div>
+            {profile.theme_id === theme.id && (
+              <Check className="w-4 h-4 text-indigo-600 ml-auto flex-shrink-0" />
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Profile Tab ──────────────────────────────────────────────────────────────
+
+function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    await supabase.from('profiles').update({
+      display_name: profile.display_name,
+      bio: profile.bio,
+      avatar_url: profile.avatar_url,
+    }).eq('id', profile.id);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  function update(key: keyof Profile, value: string) {
+    onProfileChange({ ...profile, [key]: value });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-slate-600">Nome de exibição</span>
+          <input
+            className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            value={profile.display_name ?? ''}
+            onChange={e => update('display_name', e.target.value)}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-slate-600">Bio</span>
+          <textarea
+            className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+            rows={3}
+            value={profile.bio ?? ''}
+            onChange={e => update('bio', e.target.value)}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-slate-600">URL do avatar</span>
+          <input
+            className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            placeholder="https://..."
+            value={profile.avatar_url ?? ''}
+            onChange={e => update('avatar_url', e.target.value)}
+          />
+        </label>
+      </div>
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+      >
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+        {saved ? 'Salvo!' : 'Salvar perfil'}
+      </button>
+    </div>
+  );
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
+export default function Dashboard() {
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>('links');
+
+  const fetchProfile = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('*, links(*)')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (data) {
+      setProfile({
+        ...data,
+        theme_id: data.theme_id ?? 'default',
+        links: (data.links ?? []).sort((a: Link, b: Link) => a.sort_order - b.sort_order),
+      });
+    }
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
+  if (!profile) return null;
+
+  const tabs: { id: Tab; label: string; icon: any }[] = [
+    { id: 'links', label: 'Links', icon: LinkIcon },
+    { id: 'theme', label: 'Tema', icon: Layout },
+    { id: 'appearance', label: 'Aparência', icon: Palette },
+    { id: 'profile', label: 'Perfil', icon: Settings },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
+        <div className="p-6 border-b border-slate-100">
+          <a href="/" className="text-lg font-bold text-slate-900 tracking-tight">linqu.es</a>
+          <p className="text-xs text-slate-400 mt-0.5">@{profile.username}</p>
+        </div>
+        <nav className="flex-1 p-4 space-y-1">
+          {tabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                tab === id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-slate-100">
+          <a
+            href={`/${profile.username}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors mb-1"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Ver meu perfil
+          </a>
+          <button
+            onClick={() => signOut()}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sair
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile tab bar */}
+      <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-slate-200 flex z-50">
+        {tabs.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`flex-1 flex flex-col items-center py-3 gap-1 text-xs transition-colors ${
+              tab === id ? 'text-indigo-600' : 'text-slate-400'
+            }`}
+          >
+            <Icon className="w-5 h-5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex overflow-hidden">
+        <main className="flex-1 overflow-y-auto p-6 pb-24 md:pb-6">
+          <div className="max-w-lg mx-auto">
+            <h2 className="text-xl font-bold text-slate-900 mb-6">
+              {tabs.find(t => t.id === tab)?.label}
+            </h2>
+            {tab === 'links' && <LinksTab profile={profile} onProfileChange={setProfile} />}
+            {tab === 'theme' && <ThemeTab profile={profile} onProfileChange={setProfile} />}
+            {tab === 'appearance' && <AppearanceTab profile={profile} onProfileChange={setProfile} />}
+            {tab === 'profile' && <ProfileTab profile={profile} onProfileChange={setProfile} />}
+          </div>
+        </main>
+
+        {/* Preview panel */}
+        <div className="hidden lg:flex flex-col w-80 xl:w-96 border-l border-slate-200 bg-slate-100 p-6">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 text-center">Preview</p>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-64 h-[520px] rounded-[2.5rem] border-8 border-slate-800 shadow-2xl overflow-hidden bg-white relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-800 rounded-b-xl z-10" />
+              <MobilePreview profile={profile} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
