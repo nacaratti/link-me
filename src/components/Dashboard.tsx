@@ -3,17 +3,82 @@ import { Reorder } from 'motion/react';
 import {
   Plus, Trash2, GripVertical, ExternalLink, Settings,
   Link as LinkIcon, Layout, Loader2, LogOut, Eye, EyeOff, Save,
-  Check, Palette,
+  Check, Palette, X, Smartphone,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { ICON_MAP, FONT_OPTIONS, BUTTON_STYLE_OPTIONS, type Profile, type Link } from '../types';
 import { THEMES, getTheme } from '../themes';
+import ThemeBackground from '../themes/ThemeBackground';
 
-type Tab = 'links' | 'theme' | 'appearance' | 'profile';
+type Tab = 'links' | 'theme' | 'appearance' | 'profile' | 'preview';
 
-// ─── Mobile Preview ──────────────────────────────────────────────────────────
+// ─── Mobile Full Preview (tab preview no celular) ────────────────────────────
+
+function MobileFullPreview({ profile }: { profile: Profile }) {
+  useEffect(() => {
+    if (profile.font_family) loadGoogleFont(profile.font_family);
+  }, [profile.font_family]);
+
+  const theme = getTheme(profile.theme_id ?? 'default');
+  const isOutline = profile.button_style === 'outline';
+  const btnRadius = {
+    rounded: 'rounded-xl', pill: 'rounded-full',
+    square: 'rounded-none', outline: 'rounded-xl',
+  }[profile.button_style] ?? 'rounded-xl';
+
+  return (
+    <div
+      className="relative min-h-full"
+      style={{ backgroundColor: profile.bg_color, fontFamily: `'${profile.font_family}', sans-serif` }}
+    >
+      <ThemeBackground Background={theme.Background} themeId={profile.theme_id ?? 'default'} />
+      <div className="relative z-10 flex flex-col items-center py-14 px-5 pb-24">
+        <img
+          src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`}
+          className="w-24 h-24 rounded-full border-4 border-white/20 shadow-lg mb-4 object-cover"
+          referrerPolicy="no-referrer"
+        />
+        <h1 className="text-xl font-bold text-center mb-1" style={{ color: profile.text_color }}>
+          {profile.display_name || profile.username}
+        </h1>
+        {profile.bio && (
+          <p className="text-sm text-center opacity-75 mb-6 max-w-xs" style={{ color: profile.text_color }}>
+            {profile.bio}
+          </p>
+        )}
+        <div className="w-full max-w-sm flex flex-col gap-3 mt-2">
+          {profile.links.filter(l => l.is_active).map(link => {
+            const Icon = ICON_MAP[link.icon_type] ?? ICON_MAP.link;
+            return (
+              <div
+                key={link.id}
+                className={`flex items-center gap-3 px-4 ${btnRadius} ${isOutline ? 'border-2' : ''}`}
+                style={{
+                  backgroundColor: isOutline ? 'transparent' : profile.button_color,
+                  color: profile.button_text_color,
+                  borderColor: isOutline ? profile.button_text_color : undefined,
+                  minHeight: '52px',
+                }}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium text-sm">{link.title}</span>
+              </div>
+            );
+          })}
+          {profile.links.filter(l => l.is_active).length === 0 && (
+            <p className="text-sm text-center opacity-40 mt-8" style={{ color: profile.text_color }}>
+              Nenhum link ativo
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobile Preview (painel desktop) ─────────────────────────────────────────
 
 function MobilePreview({ profile }: { profile: Profile }) {
   useEffect(() => {
@@ -32,7 +97,10 @@ function MobilePreview({ profile }: { profile: Profile }) {
       className="w-full h-full relative overflow-hidden"
       style={{ backgroundColor: profile.bg_color, fontFamily: `'${profile.font_family}', sans-serif` }}
     >
-      {theme.Background && <theme.Background />}
+      {theme.isWebGL
+        ? <div className="absolute inset-0" style={{ ...theme.previewStyle as React.CSSProperties, position: 'absolute', zIndex: 0 }} />
+        : <ThemeBackground Background={theme.Background} themeId={profile.theme_id ?? 'default'} />
+      }
       <div className="relative h-full overflow-y-auto" style={{ zIndex: 1 }}>
         <div className="flex flex-col items-center py-10 px-4">
           <img
@@ -82,6 +150,7 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   const [newUrl, setNewUrl] = useState('');
   const [newIcon, setNewIcon] = useState('link');
   const [adding, setAdding] = useState(false);
+  const [showSheet, setShowSheet] = useState(false);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -100,68 +169,84 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
       setNewTitle('');
       setNewUrl('');
       setNewIcon('link');
+      setShowSheet(false);
     }
     setAdding(false);
   }
 
   async function handleDelete(id: number) {
-    await supabase.from('links').delete().eq('id', id);
-    onProfileChange({ ...profile, links: profile.links.filter(l => l.id !== id) });
+    const { error } = await supabase.from('links').delete().eq('id', id);
+    if (!error) {
+      onProfileChange({ ...profile, links: profile.links.filter(l => l.id !== id) });
+    }
   }
 
   async function handleToggle(link: Link) {
     const updated = { ...link, is_active: !link.is_active };
-    await supabase.from('links').update({ is_active: updated.is_active }).eq('id', link.id);
-    onProfileChange({ ...profile, links: profile.links.map(l => l.id === link.id ? updated : l) });
+    const { error } = await supabase.from('links').update({ is_active: updated.is_active }).eq('id', link.id);
+    if (!error) {
+      onProfileChange({ ...profile, links: profile.links.map(l => l.id === link.id ? updated : l) });
+    }
   }
 
   async function handleReorder(newLinks: Link[]) {
     const reordered = newLinks.map((l, i) => ({ ...l, sort_order: i }));
+    const previousLinks = profile.links;
     onProfileChange({ ...profile, links: reordered });
-    await Promise.all(
+    const results = await Promise.all(
       reordered.map(l => supabase.from('links').update({ sort_order: l.sort_order }).eq('id', l.id))
     );
+    if (results.some(r => r.error)) {
+      onProfileChange({ ...profile, links: previousLinks });
+    }
   }
+
+  const addForm = (compact = false) => (
+    <form onSubmit={handleAdd} className="space-y-3">
+      <input
+        className="w-full px-4 py-3 text-base border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        placeholder="Título"
+        value={newTitle}
+        onChange={e => setNewTitle(e.target.value)}
+        required
+      />
+      <input
+        className="w-full px-4 py-3 text-base border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        placeholder="URL (https://...)"
+        type="url"
+        value={newUrl}
+        onChange={e => setNewUrl(e.target.value)}
+        required
+      />
+      <div className={compact ? 'flex gap-2' : 'flex gap-2'}>
+        <select
+          className="flex-1 px-4 py-3 text-base border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+          value={newIcon}
+          onChange={e => setNewIcon(e.target.value)}
+        >
+          {Object.keys(ICON_MAP).map(k => (
+            <option key={k} value={k}>{k}</option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          disabled={adding}
+          className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white text-base font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+        >
+          {adding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+          Adicionar
+        </button>
+      </div>
+    </form>
+  );
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleAdd} className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
+      {/* Inline form — desktop only */}
+      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
         <h3 className="text-sm font-semibold text-slate-700">Novo link</h3>
-        <input
-          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          placeholder="Título"
-          value={newTitle}
-          onChange={e => setNewTitle(e.target.value)}
-          required
-        />
-        <input
-          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          placeholder="URL (https://...)"
-          type="url"
-          value={newUrl}
-          onChange={e => setNewUrl(e.target.value)}
-          required
-        />
-        <div className="flex gap-2">
-          <select
-            className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            value={newIcon}
-            onChange={e => setNewIcon(e.target.value)}
-          >
-            {Object.keys(ICON_MAP).map(k => (
-              <option key={k} value={k}>{k}</option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            disabled={adding}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
-            {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Adicionar
-          </button>
-        </div>
-      </form>
+        {addForm()}
+      </div>
 
       <Reorder.Group axis="y" values={profile.links} onReorder={handleReorder} className="space-y-2">
         {profile.links.map(link => {
@@ -170,9 +255,9 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
             <Reorder.Item
               key={link.id}
               value={link}
-              className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm cursor-grab active:cursor-grabbing"
+              className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 px-3 py-3 shadow-sm cursor-grab active:cursor-grabbing"
             >
-              <GripVertical className="w-4 h-4 text-slate-300 flex-shrink-0" />
+              <GripVertical className="w-5 h-5 text-slate-300 flex-shrink-0" />
               <div className="p-1.5 rounded-lg bg-slate-100">
                 <Icon className="w-4 h-4 text-slate-600" />
               </div>
@@ -182,13 +267,15 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
               </div>
               <button
                 onClick={() => handleToggle(link)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                style={{ touchAction: 'manipulation' }}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
               >
                 {link.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
               <button
                 onClick={() => handleDelete(link.id)}
-                className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                style={{ touchAction: 'manipulation' }}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -196,6 +283,38 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           );
         })}
       </Reorder.Group>
+
+      {/* FAB — mobile only */}
+      <button
+        onClick={() => setShowSheet(true)}
+        style={{ touchAction: 'manipulation', bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
+        className="fixed right-4 z-40 md:hidden w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xl flex items-center justify-center transition-colors"
+        aria-label="Adicionar link"
+      >
+        <Plus className="w-7 h-7" />
+      </button>
+
+      {/* Bottom sheet — mobile only */}
+      {showSheet && (
+        <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowSheet(false)} />
+          <div className="relative bg-white rounded-t-3xl px-5 pt-4 shadow-2xl"
+            style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+          >
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-slate-800">Novo link</h3>
+              <button
+                onClick={() => setShowSheet(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {addForm()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -248,7 +367,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                 type="text"
                 value={(profile as any)[key] ?? ''}
                 onChange={e => update(key as keyof Profile, e.target.value)}
-                className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono"
+                className="flex-1 px-3 py-2 text-base md:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono"
               />
             </div>
           </label>
@@ -312,6 +431,11 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    const unique = [...new Set(THEMES.map(t => t.defaults.font_family))];
+    unique.forEach(loadGoogleFont);
+  }, []);
+
   async function handleSelect(themeId: string) {
     const theme = THEMES.find(t => t.id === themeId);
     if (!theme) return;
@@ -349,30 +473,74 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           <Check className="w-4 h-4" /> Tema aplicado!
         </div>
       )}
-      <div className="grid grid-cols-1 gap-3">
-        {THEMES.map(theme => (
-          <button
-            key={theme.id}
-            onClick={() => handleSelect(theme.id)}
-            className={`flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all ${
-              profile.theme_id === theme.id
-                ? 'border-indigo-500 bg-indigo-50'
-                : 'border-slate-200 hover:border-slate-300 bg-white'
-            }`}
-          >
-            <div
-              className="w-12 h-12 rounded-xl flex-shrink-0 shadow-sm"
-              style={theme.previewStyle as React.CSSProperties}
-            />
-            <div>
-              <p className="text-sm font-semibold text-slate-800">{theme.name}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{theme.description}</p>
-            </div>
-            {profile.theme_id === theme.id && (
-              <Check className="w-4 h-4 text-indigo-600 ml-auto flex-shrink-0" />
-            )}
-          </button>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {THEMES.map(theme => {
+          const selected = profile.theme_id === theme.id;
+          const d = theme.defaults;
+          return (
+            <button
+              key={theme.id}
+              onClick={() => handleSelect(theme.id)}
+              title={theme.description}
+              className={`relative rounded-2xl overflow-hidden transition-all duration-200 focus:outline-none shadow-sm ${
+                selected
+                  ? 'ring-2 ring-indigo-500 ring-offset-2 scale-[1.03] shadow-md'
+                  : 'hover:scale-[1.03] hover:shadow-md'
+              }`}
+            >
+              {/* Card background */}
+              <div
+                className="w-full flex flex-col items-center justify-center gap-1.5 px-2 pt-5 pb-8"
+                style={theme.previewStyle as React.CSSProperties}
+              >
+                {/* Fake avatar */}
+                <div
+                  className="w-7 h-7 rounded-full"
+                  style={{ backgroundColor: d.text_color, opacity: 0.28 }}
+                />
+                {/* Fake name line */}
+                <div
+                  className="h-1.5 rounded-full"
+                  style={{ width: '55%', backgroundColor: d.text_color, opacity: 0.22 }}
+                />
+                {/* Fake bio line */}
+                <div
+                  className="h-1 rounded-full"
+                  style={{ width: '38%', backgroundColor: d.text_color, opacity: 0.14 }}
+                />
+                {/* Fake button */}
+                <div
+                  className="h-4 mt-0.5"
+                  style={{
+                    width: '72%',
+                    backgroundColor: d.button_style === 'outline' ? 'transparent' : d.button_color,
+                    border: d.button_style === 'outline' ? `1.5px solid ${d.button_text_color}` : undefined,
+                    borderRadius: d.button_style === 'pill' ? '9999px'
+                      : d.button_style === 'square' ? '2px'
+                      : '6px',
+                  }}
+                />
+              </div>
+
+              {/* Name label */}
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent pt-5 pb-2 px-1.5">
+                <p
+                  className="text-[11px] font-semibold text-white text-center leading-tight truncate"
+                  style={{ fontFamily: `'${d.font_family}', sans-serif` }}
+                >
+                  {theme.name}
+                </p>
+              </div>
+
+              {/* Selected badge */}
+              {selected && (
+                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center shadow">
+                  <Check className="w-2.5 h-2.5 text-white" />
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -406,7 +574,7 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-slate-600">Nome de exibição</span>
           <input
-            className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="px-3 py-2 text-base md:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
             value={profile.display_name ?? ''}
             onChange={e => update('display_name', e.target.value)}
           />
@@ -414,7 +582,7 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-slate-600">Bio</span>
           <textarea
-            className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+            className="px-3 py-2 text-base md:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
             rows={3}
             value={profile.bio ?? ''}
             onChange={e => update('bio', e.target.value)}
@@ -423,7 +591,7 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-slate-600">URL do avatar</span>
           <input
-            className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="px-3 py-2 text-base md:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
             placeholder="https://..."
             value={profile.avatar_url ?? ''}
             onChange={e => update('avatar_url', e.target.value)}
@@ -479,11 +647,15 @@ export default function Dashboard() {
 
   if (!profile) return null;
 
-  const tabs: { id: Tab; label: string; icon: any }[] = [
+  const desktopTabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'links', label: 'Links', icon: LinkIcon },
     { id: 'theme', label: 'Tema', icon: Layout },
     { id: 'appearance', label: 'Aparência', icon: Palette },
     { id: 'profile', label: 'Perfil', icon: Settings },
+  ];
+  const mobileTabs: { id: Tab; label: string; icon: any }[] = [
+    ...desktopTabs,
+    { id: 'preview', label: 'Preview', icon: Smartphone },
   ];
 
   return (
@@ -495,7 +667,7 @@ export default function Dashboard() {
           <p className="text-xs text-slate-400 mt-0.5">@{profile.username}</p>
         </div>
         <nav className="flex-1 p-4 space-y-1">
-          {tabs.map(({ id, label, icon: Icon }) => (
+          {desktopTabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
@@ -529,12 +701,16 @@ export default function Dashboard() {
       </aside>
 
       {/* Mobile tab bar */}
-      <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-slate-200 flex z-50">
-        {tabs.map(({ id, label, icon: Icon }) => (
+      <div
+        className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-slate-200 flex z-50"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {mobileTabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex-1 flex flex-col items-center py-3 gap-1 text-xs transition-colors ${
+            style={{ touchAction: 'manipulation' }}
+            className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 text-[10px] font-medium transition-colors ${
               tab === id ? 'text-indigo-600' : 'text-slate-400'
             }`}
           >
@@ -546,16 +722,20 @@ export default function Dashboard() {
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6 pb-24 md:pb-6">
-          <div className="max-w-lg mx-auto">
-            <h2 className="text-xl font-bold text-slate-900 mb-6">
-              {tabs.find(t => t.id === tab)?.label}
-            </h2>
-            {tab === 'links' && <LinksTab profile={profile} onProfileChange={setProfile} />}
-            {tab === 'theme' && <ThemeTab profile={profile} onProfileChange={setProfile} />}
-            {tab === 'appearance' && <AppearanceTab profile={profile} onProfileChange={setProfile} />}
-            {tab === 'profile' && <ProfileTab profile={profile} onProfileChange={setProfile} />}
-          </div>
+        <main className={`flex-1 overflow-y-auto ${tab === 'preview' ? '' : 'p-6 pb-28 md:pb-6'}`}>
+          {tab === 'preview' ? (
+            <MobileFullPreview profile={profile} />
+          ) : (
+            <div className="max-w-lg mx-auto">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">
+                {desktopTabs.find(t => t.id === tab)?.label}
+              </h2>
+              {tab === 'links' && <LinksTab profile={profile} onProfileChange={setProfile} />}
+              {tab === 'theme' && <ThemeTab profile={profile} onProfileChange={setProfile} />}
+              {tab === 'appearance' && <AppearanceTab profile={profile} onProfileChange={setProfile} />}
+              {tab === 'profile' && <ProfileTab profile={profile} onProfileChange={setProfile} />}
+            </div>
+          )}
         </main>
 
         {/* Preview panel */}

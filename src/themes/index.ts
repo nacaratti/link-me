@@ -1,76 +1,74 @@
+import { lazy } from 'react';
 import type { ThemeDefinition } from './types';
-import MercuryBackground from './mercury/Background';
-import QuantumBackground from './quantum/Background';
-import LaserBackground from './laser/Background';
-import VoidBackground from './void/Background';
+
+// ── WebGL (Three.js) ─────────────────────────────────────────────────────────
+const MercuryBackground     = lazy(() => import('./mercury/Background'));
+const QuantumBackground     = lazy(() => import('./quantum/Background'));
+const VoidBackground        = lazy(() => import('./void/Background'));
+
+// ── CSS animations ────────────────────────────────────────────────────────────
+const AuroraBackground      = lazy(() => import('./aurora/Background'));
+const SunsetBackground      = lazy(() => import('./sunset/Background'));
+const NeonBackground        = lazy(() => import('./neon/Background'));
+const BlobBackground        = lazy(() => import('./blob/Background'));
+
+// ── Canvas 2D ─────────────────────────────────────────────────────────────────
+const LaserBackground         = lazy(() => import('./laser/Background'));
+const ConstellationBackground = lazy(() => import('./constellation/Background'));
+const RippleBackground        = lazy(() => import('./ripple/Background'));
+const FlowBackground          = lazy(() => import('./flow/Background'));
+const FirefliesBackground     = lazy(() => import('./fireflies/Background'));
 
 export const THEMES: ThemeDefinition[] = [
+  // ── Clássico ──────────────────────────────────────────────────────────────
   {
     id: 'default',
     name: 'Clássico',
     description: 'Fundo simples com cores totalmente personalizáveis.',
-    previewStyle: {
-      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-    },
+    previewStyle: { background: 'linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%)' },
     defaults: {
-      bg_color: '#f8fafc',
-      text_color: '#0f172a',
-      button_color: '#ffffff',
-      button_text_color: '#0f172a',
-      button_style: 'rounded',
-      font_family: 'Inter',
+      bg_color: '#f8fafc', text_color: '#0f172a',
+      button_color: '#ffffff', button_text_color: '#0f172a',
+      button_style: 'rounded', font_family: 'Inter',
     },
   },
+
+  // ── WebGL ──────────────────────────────────────────────────────────────────
   {
     id: 'mercury',
     name: 'Mercúrio Líquido',
     description: 'Blobs orgânicos animados em WebGL com efeito metálico.',
-    previewStyle: {
-      background: '#0a0a0a',
-      position: 'relative',
-      overflow: 'hidden',
-    },
+    previewStyle: { background: 'radial-gradient(ellipse at 35% 65%,#2a1f2a 0%,#0a0a0a 100%)' },
     defaults: {
-      bg_color: '#0a0a0a',
-      text_color: '#f0f0f0',
-      button_color: 'rgba(255,255,255,0.08)',
-      button_text_color: '#f0f0f0',
-      button_style: 'pill',
-      font_family: 'Space Grotesk',
+      bg_color: '#0a0a0a', text_color: '#f0f0f0',
+      button_color: 'rgba(255,255,255,0.08)', button_text_color: '#f0f0f0',
+      button_style: 'pill', font_family: 'Space Grotesk',
     },
     Background: MercuryBackground,
+    isWebGL: true,
   },
   {
     id: 'quantum',
     name: 'Esfera Quântica',
     description: 'Esferas metálicas distorcidas flutuando em um cosmos de estrelas.',
-    previewStyle: {
-      background: 'radial-gradient(ellipse at 50% 50%, #1a1a2e 0%, #000000 100%)',
-    },
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%,#1a1a2e 0%,#000000 100%)' },
     defaults: {
-      bg_color: '#000000',
-      text_color: '#ffffff',
-      button_color: 'rgba(255,255,255,0.08)',
-      button_text_color: '#ffffff',
-      button_style: 'pill',
-      font_family: 'Space Grotesk',
+      bg_color: '#000000', text_color: '#ffffff',
+      button_color: 'rgba(255,255,255,0.08)', button_text_color: '#ffffff',
+      button_style: 'pill', font_family: 'Space Grotesk',
     },
     Background: QuantumBackground,
+    isWebGL: true,
   },
   {
     id: 'laser',
     name: 'Laser',
     description: 'Feixes de luz neon ricocheteando em um cosmos escuro com bloom.',
-    previewStyle: {
-      background: 'radial-gradient(ellipse at 30% 60%, #00ffff22 0%, #ff00ff11 50%, #010101 100%)',
-    },
+    previewStyle: { background: 'radial-gradient(ellipse at 30% 60%,#00ffff22 0%,#ff00ff11 50%,#010101 100%)' },
     defaults: {
-      bg_color: '#010101',
-      text_color: '#ffffff',
-      button_color: 'rgba(0,255,255,0.1)',
-      button_text_color: '#00ffff',
-      button_style: 'pill',
-      font_family: 'Space Grotesk',
+      bg_color: '#010101', text_color: '#ffffff',
+      button_color: 'rgba(0,255,255,0.1)', button_text_color: '#00ffff',
+      button_style: 'pill', font_family: 'Space Grotesk',
     },
     Background: LaserBackground,
   },
@@ -78,18 +76,114 @@ export const THEMES: ThemeDefinition[] = [
     id: 'void',
     name: 'Void',
     description: 'Nuvens de partículas girando no vazio infinito.',
-    previewStyle: {
-      background: 'radial-gradient(ellipse at 40% 60%, #1e1b4b 0%, #050505 100%)',
-    },
+    previewStyle: { background: 'radial-gradient(ellipse at 40% 60%,#1e1b4b 0%,#050505 100%)' },
     defaults: {
-      bg_color: '#050505',
-      text_color: '#e0e7ff',
-      button_color: 'rgba(165,180,252,0.1)',
-      button_text_color: '#e0e7ff',
-      button_style: 'pill',
-      font_family: 'Space Grotesk',
+      bg_color: '#050505', text_color: '#e0e7ff',
+      button_color: 'rgba(165,180,252,0.1)', button_text_color: '#e0e7ff',
+      button_style: 'pill', font_family: 'Space Grotesk',
     },
     Background: VoidBackground,
+    isWebGL: true,
+  },
+
+  // ── CSS ────────────────────────────────────────────────────────────────────
+  {
+    id: 'aurora',
+    name: 'Aurora Boreal',
+    description: 'Cortinas de luz esverdeada dançando sobre um céu estrelado.',
+    previewStyle: { background: 'linear-gradient(180deg,#030d1a 0%,#071a10 55%,#050a12 100%)' },
+    defaults: {
+      bg_color: '#030d1a', text_color: '#d0fff0',
+      button_color: 'rgba(0,200,120,0.12)', button_text_color: '#a0ffd0',
+      button_style: 'pill', font_family: 'Space Grotesk',
+    },
+    Background: AuroraBackground,
+  },
+  {
+    id: 'sunset',
+    name: 'Pôr do Sol',
+    description: 'Camadas de gradiente quente em roxo, magenta e laranja dourado.',
+    previewStyle: { background: 'linear-gradient(180deg,#12001e 0%,#500040 42%,#a00050 70%,#e05000 100%)' },
+    defaults: {
+      bg_color: '#12001e', text_color: '#ffd4a8',
+      button_color: 'rgba(255,100,50,0.15)', button_text_color: '#ffb080',
+      button_style: 'pill', font_family: 'Playfair Display',
+    },
+    Background: SunsetBackground,
+  },
+  {
+    id: 'neon',
+    name: 'Neon Grid',
+    description: 'Grade cyberpunk em perspectiva com orbes neon pulsantes.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 110%,#00ffee18 0%,#ff00cc10 45%,#000000 100%)' },
+    defaults: {
+      bg_color: '#000000', text_color: '#00ffee',
+      button_color: 'rgba(0,255,220,0.08)', button_text_color: '#00ffee',
+      button_style: 'square', font_family: 'Space Grotesk',
+    },
+    Background: NeonBackground,
+  },
+  {
+    id: 'blob',
+    name: 'Liquid Blob',
+    description: 'Bolhas orgânicas em pastel se deformando suavemente.',
+    previewStyle: { background: 'linear-gradient(135deg,#f0e8ff 0%,#e8f5f0 50%,#ffe8f0 100%)' },
+    defaults: {
+      bg_color: '#f5eeff', text_color: '#3d1a6e',
+      button_color: 'rgba(255,255,255,0.65)', button_text_color: '#5b2d9e',
+      button_style: 'pill', font_family: 'Poppins',
+    },
+    Background: BlobBackground,
+  },
+
+  // ── Canvas 2D ──────────────────────────────────────────────────────────────
+  {
+    id: 'constellation',
+    name: 'Constelação',
+    description: 'Estrelas à deriva conectadas por linhas sutis de luz.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%,#0a1020 0%,#050812 100%)' },
+    defaults: {
+      bg_color: '#050812', text_color: '#c8d8ff',
+      button_color: 'rgba(150,180,255,0.1)', button_text_color: '#a8c0ff',
+      button_style: 'rounded', font_family: 'Space Grotesk',
+    },
+    Background: ConstellationBackground,
+  },
+  {
+    id: 'ripple',
+    name: 'Lago de Ondas',
+    description: 'Círculos concêntricos se expandindo em água turquesa.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%,#051a20 0%,#02151f 100%)' },
+    defaults: {
+      bg_color: '#02151f', text_color: '#90ffe8',
+      button_color: 'rgba(0,200,180,0.12)', button_text_color: '#60ffd8',
+      button_style: 'rounded', font_family: 'Inter',
+    },
+    Background: RippleBackground,
+  },
+  {
+    id: 'flow',
+    name: 'Fluxo Dourado',
+    description: 'Partículas áureas fluindo em padrões orgânicos hipnóticos.',
+    previewStyle: { background: 'linear-gradient(135deg,#0a0805 0%,#150f0a 100%)' },
+    defaults: {
+      bg_color: '#0a0805', text_color: '#ffd080',
+      button_color: 'rgba(255,180,50,0.1)', button_text_color: '#ffcc60',
+      button_style: 'pill', font_family: 'Poppins',
+    },
+    Background: FlowBackground,
+  },
+  {
+    id: 'fireflies',
+    name: 'Vagalumes',
+    description: 'Pontos luminosos piscando com movimento orgânico na floresta.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%,#051008 0%,#020d05 100%)' },
+    defaults: {
+      bg_color: '#020d05', text_color: '#c8ffcc',
+      button_color: 'rgba(100,255,100,0.08)', button_text_color: '#80ff90',
+      button_style: 'rounded', font_family: 'Inter',
+    },
+    Background: FirefliesBackground,
   },
 ];
 

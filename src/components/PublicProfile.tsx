@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
 import { getTheme } from '../themes';
 import { ICON_MAP } from '../types';
+import ThemeBackground from '../themes/ThemeBackground';
 import { ExternalLink, AlertCircle } from 'lucide-react';
 import type { Profile } from '../types';
 
@@ -75,11 +76,11 @@ export default function PublicProfile() {
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden flex flex-col items-center py-16 px-4"
+      className="min-h-screen relative overflow-hidden flex flex-col items-center py-10 sm:py-16 px-4"
       style={{ backgroundColor: profile.bg_color, fontFamily: `'${profile.font_family}', sans-serif` }}
     >
       {/* Theme background layer */}
-      {theme.Background && <theme.Background />}
+      <ThemeBackground Background={theme.Background} themeId={profile.theme_id} />
 
       {/* Content layer */}
       <motion.div
@@ -120,8 +121,9 @@ export default function PublicProfile() {
                 transition={{ delay: index * 0.07 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`flex items-center justify-between p-4 shadow-sm transition-all group backdrop-blur-sm ${btnRadius} ${isOutline ? 'border-2' : ''}`}
+                className={`flex items-center justify-between px-4 shadow-sm transition-all group backdrop-blur-sm ${btnRadius} ${isOutline ? 'border-2' : ''}`}
                 style={{
+                  minHeight: '56px',
                   backgroundColor: isOutline ? 'transparent' : profile.button_color,
                   color: profile.button_text_color,
                   borderColor: isOutline ? profile.button_text_color : undefined,
@@ -133,13 +135,13 @@ export default function PublicProfile() {
                   </div>
                   <span className="font-medium">{link.title}</span>
                 </div>
-                <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-40 transition-opacity" />
+                <ExternalLink className="w-4 h-4 opacity-20 group-hover:opacity-50 transition-opacity" />
               </motion.a>
             );
           })}
         </div>
 
-        <div className="mt-16 text-center">
+        <div className="mt-16 text-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <a
             href="/entrar"
             className="text-xs font-bold uppercase tracking-widest opacity-30 hover:opacity-80 transition-opacity"

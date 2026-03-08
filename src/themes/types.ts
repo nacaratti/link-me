@@ -11,4 +11,6 @@ export interface ThemeDefinition {
   defaults: Pick<Profile, 'bg_color' | 'text_color' | 'button_color' | 'button_text_color' | 'button_style' | 'font_family'>;
   /** Full-screen background rendered behind the profile content */
   Background?: React.ComponentType;
+  /** True for WebGL (Three.js) themes — skipped in MobilePreview to avoid context limits */
+  isWebGL?: boolean;
 }
