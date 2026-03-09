@@ -3,7 +3,7 @@ import { Reorder } from 'motion/react';
 import {
   Plus, Trash2, GripVertical, ExternalLink, Settings,
   Link as LinkIcon, Layout, Loader2, LogOut, Eye, EyeOff, Save,
-  Check, Palette, X, Smartphone,
+  Check, Palette, X, Smartphone, ShieldCheck,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
@@ -11,6 +11,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { ICON_MAP, FONT_OPTIONS, BUTTON_STYLE_OPTIONS, type Profile, type Link } from '../types';
 import { THEMES, getTheme } from '../themes';
 import ThemeBackground from '../themes/ThemeBackground';
+import logo from '../assets/images/logo.png';
+import { linkLimitReached, linkBlockMessage, canUseTheme, themeBlockMessage } from '../lib/plans';
+import { fetchThemeConfigs, isThemePro, invalidateThemeConfigCache, type ThemeConfig } from '../lib/themeConfig';
 
 type Tab = 'links' | 'theme' | 'appearance' | 'profile' | 'preview';
 
@@ -152,8 +155,11 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   const [adding, setAdding] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
 
+  const blocked = linkLimitReached(profile.links.length, profile.plan ?? 'free');
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
+    if (blocked) return;
     setAdding(true);
     const maxOrder = profile.links.reduce((m, l) => Math.max(m, l.sort_order), -1);
     const { data, error } = await supabase.from('links').insert({
@@ -204,14 +210,14 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   const addForm = (compact = false) => (
     <form onSubmit={handleAdd} className="space-y-3">
       <input
-        className="w-full px-4 py-3 text-base border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className="w-full px-4 py-3 text-base border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
         placeholder="Título"
         value={newTitle}
         onChange={e => setNewTitle(e.target.value)}
         required
       />
       <input
-        className="w-full px-4 py-3 text-base border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className="w-full px-4 py-3 text-base border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
         placeholder="URL (https://...)"
         type="url"
         value={newUrl}
@@ -220,7 +226,7 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
       />
       <div className={compact ? 'flex gap-2' : 'flex gap-2'}>
         <select
-          className="flex-1 px-4 py-3 text-base border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+          className="flex-1 px-4 py-3 text-base border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0] bg-white"
           value={newIcon}
           onChange={e => setNewIcon(e.target.value)}
         >
@@ -231,7 +237,7 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         <button
           type="submit"
           disabled={adding}
-          className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white text-base font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-2 px-5 py-3 bg-[#0B76A0] text-white text-base font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
         >
           {adding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
           Adicionar
@@ -243,9 +249,12 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   return (
     <div className="space-y-6">
       {/* Inline form — desktop only */}
-      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
-        <h3 className="text-sm font-semibold text-slate-700">Novo link</h3>
-        {addForm()}
+      <div className="hidden md:block bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-3">
+        <h3 className="text-sm font-semibold text-[#333333]">Novo link</h3>
+        {blocked
+          ? <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">{linkBlockMessage(profile.plan ?? 'free')}</p>
+          : addForm()
+        }
       </div>
 
       <Reorder.Group axis="y" values={profile.links} onReorder={handleReorder} className="space-y-2">
@@ -255,27 +264,27 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
             <Reorder.Item
               key={link.id}
               value={link}
-              className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 px-3 py-3 shadow-sm cursor-grab active:cursor-grabbing"
+              className="flex items-center gap-3 bg-white rounded-xl border border-[#D9D9D9] px-3 py-3 shadow-sm cursor-grab active:cursor-grabbing"
             >
-              <GripVertical className="w-5 h-5 text-slate-300 flex-shrink-0" />
-              <div className="p-1.5 rounded-lg bg-slate-100">
-                <Icon className="w-4 h-4 text-slate-600" />
+              <GripVertical className="w-5 h-5 text-[#BFBFBF] flex-shrink-0" />
+              <div className="p-1.5 rounded-lg bg-[#ebebeb]">
+                <Icon className="w-4 h-4 text-[#555555]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-800 truncate">{link.title}</p>
-                <p className="text-xs text-slate-400 truncate">{link.url}</p>
+                <p className="text-sm font-medium text-[#111111] truncate">{link.title}</p>
+                <p className="text-xs text-[#BFBFBF] truncate">{link.url}</p>
               </div>
               <button
                 onClick={() => handleToggle(link)}
                 style={{ touchAction: 'manipulation' }}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-[#ebebeb] text-[#BFBFBF] hover:text-[#555555] transition-colors"
               >
                 {link.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
               <button
                 onClick={() => handleDelete(link.id)}
                 style={{ touchAction: 'manipulation' }}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-50 text-[#BFBFBF] hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -284,11 +293,20 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         })}
       </Reorder.Group>
 
+      {/* Limite de links */}
+      {blocked && (
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+          <span className="text-base">⚠️</span>
+          <span>{linkBlockMessage(profile.plan ?? 'free')}</span>
+        </div>
+      )}
+
       {/* FAB — mobile only */}
       <button
-        onClick={() => setShowSheet(true)}
+        onClick={() => { if (!blocked) setShowSheet(true); }}
+        disabled={blocked}
         style={{ touchAction: 'manipulation', bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
-        className="fixed right-4 z-40 md:hidden w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xl flex items-center justify-center transition-colors"
+        className="fixed right-4 z-40 md:hidden w-14 h-14 bg-[#0B76A0] hover:bg-[#095f7d] disabled:opacity-40 text-white rounded-full shadow-xl flex items-center justify-center transition-colors"
         aria-label="Adicionar link"
       >
         <Plus className="w-7 h-7" />
@@ -301,12 +319,12 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           <div className="relative bg-white rounded-t-3xl px-5 pt-4 shadow-2xl"
             style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
           >
-            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
+            <div className="w-10 h-1 bg-[#D9D9D9] rounded-full mx-auto mb-4" />
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-slate-800">Novo link</h3>
+              <h3 className="text-base font-semibold text-[#111111]">Novo link</h3>
               <button
                 onClick={() => setShowSheet(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-[#ebebeb] text-[#BFBFBF]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -346,8 +364,8 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-        <h3 className="text-sm font-semibold text-slate-700">Cores</h3>
+      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold text-[#333333]">Cores</h3>
         {[
           { label: 'Fundo da página', key: 'bg_color' },
           { label: 'Cor do texto', key: 'text_color' },
@@ -355,27 +373,27 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
           { label: 'Texto dos botões', key: 'button_text_color' },
         ].map(({ label, key }) => (
           <label key={key} className="flex flex-col gap-2 cursor-pointer">
-            <span className="text-xs font-medium text-slate-600">{label}</span>
+            <span className="text-xs font-medium text-[#555555]">{label}</span>
             <div className="flex items-center gap-3">
               <input
                 type="color"
                 value={(profile as any)[key]?.startsWith('#') ? (profile as any)[key] : '#ffffff'}
                 onChange={e => update(key as keyof Profile, e.target.value)}
-                className="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer p-0.5"
+                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5"
               />
               <input
                 type="text"
                 value={(profile as any)[key] ?? ''}
                 onChange={e => update(key as keyof Profile, e.target.value)}
-                className="flex-1 px-3 py-2 text-base md:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono"
+                className="flex-1 px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono"
               />
             </div>
           </label>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
-        <h3 className="text-sm font-semibold text-slate-700">Estilo dos botões</h3>
+      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-3">
+        <h3 className="text-sm font-semibold text-[#333333]">Estilo dos botões</h3>
         <div className="grid grid-cols-2 gap-2">
           {BUTTON_STYLE_OPTIONS.map(opt => (
             <button
@@ -383,8 +401,8 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
               onClick={() => update('button_style', opt.value)}
               className={`py-2 px-3 text-sm border-2 transition-colors ${opt.class} ${
                 profile.button_style === opt.value
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-medium'
-                  : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                  ? 'border-[#0B76A0] bg-[#e8f4f8] text-[#095f7d] font-medium'
+                  : 'border-[#D9D9D9] text-[#555555] hover:border-[#BFBFBF]'
               }`}
             >
               {opt.label}
@@ -393,8 +411,8 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
-        <h3 className="text-sm font-semibold text-slate-700">Fonte</h3>
+      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-3">
+        <h3 className="text-sm font-semibold text-[#333333]">Fonte</h3>
         <div className="grid grid-cols-2 gap-2">
           {FONT_OPTIONS.map(opt => (
             <button
@@ -402,8 +420,8 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
               onClick={() => { update('font_family', opt.value); loadGoogleFont(opt.value); }}
               className={`py-2 px-3 text-sm border-2 rounded-lg transition-colors ${
                 profile.font_family === opt.value
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-medium'
-                  : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                  ? 'border-[#0B76A0] bg-[#e8f4f8] text-[#095f7d] font-medium'
+                  : 'border-[#D9D9D9] text-[#555555] hover:border-[#BFBFBF]'
               }`}
               style={{ fontFamily: `'${opt.value}', sans-serif` }}
             >
@@ -416,7 +434,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-3 bg-[#0B76A0] text-white font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
         {saved ? 'Salvo!' : 'Salvar aparência'}
@@ -430,15 +448,24 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [themeConfigs, setThemeConfigs] = useState<Record<string, ThemeConfig>>({});
+  const [blocked, setBlocked] = useState<string | null>(null); // themeId que mostrou upsell
 
   useEffect(() => {
     const unique = [...new Set(THEMES.map(t => t.defaults.font_family))];
     unique.forEach(loadGoogleFont);
+    fetchThemeConfigs().then(setThemeConfigs);
   }, []);
 
   async function handleSelect(themeId: string) {
     const theme = THEMES.find(t => t.id === themeId);
     if (!theme) return;
+    const isPro = isThemePro(themeConfigs, themeId);
+    if (!canUseTheme(isPro, profile.plan ?? 'free')) {
+      setBlocked(themeId);
+      return;
+    }
+    setBlocked(null);
     const updated: Profile = {
       ...profile,
       theme_id: themeId,
@@ -462,9 +489,9 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-slate-500">Escolha um tema para aplicar cores e efeitos pré-definidos.</p>
+      <p className="text-xs text-[#BFBFBF]">Escolha um tema para aplicar cores e efeitos pré-definidos.</p>
       {saving && (
-        <div className="flex items-center gap-2 text-sm text-indigo-600">
+        <div className="flex items-center gap-2 text-sm text-[#0B76A0]">
           <Loader2 className="w-4 h-4 animate-spin" /> Aplicando tema...
         </div>
       )}
@@ -473,9 +500,19 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           <Check className="w-4 h-4" /> Tema aplicado!
         </div>
       )}
+      {/* Upsell de tema PRO */}
+      {blocked && (
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+          <span className="text-base">🔒</span>
+          <span>{themeBlockMessage()}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {THEMES.map(theme => {
           const selected = profile.theme_id === theme.id;
+          const isPro = isThemePro(themeConfigs, theme.id);
+          const locked = isPro && !canUseTheme(isPro, profile.plan ?? 'free');
           const d = theme.defaults;
           return (
             <button
@@ -483,8 +520,9 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
               onClick={() => handleSelect(theme.id)}
               title={theme.description}
               className={`relative rounded-2xl overflow-hidden transition-all duration-200 focus:outline-none shadow-sm ${
+                locked ? 'opacity-75' :
                 selected
-                  ? 'ring-2 ring-indigo-500 ring-offset-2 scale-[1.03] shadow-md'
+                  ? 'ring-2 ring-[#0B76A0] ring-offset-2 scale-[1.03] shadow-md'
                   : 'hover:scale-[1.03] hover:shadow-md'
               }`}
             >
@@ -532,9 +570,23 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                 </p>
               </div>
 
+              {/* PRO badge */}
+              {isPro && (
+                <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-400 text-[8px] font-black text-black leading-tight shadow">
+                  PRO
+                </div>
+              )}
+
+              {/* Lock overlay for locked themes */}
+              {locked && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <span className="text-xl">🔒</span>
+                </div>
+              )}
+
               {/* Selected badge */}
-              {selected && (
-                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center shadow">
+              {selected && !locked && (
+                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
                   <Check className="w-2.5 h-2.5 text-white" />
                 </div>
               )}
@@ -570,28 +622,28 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600">Nome de exibição</span>
+          <span className="text-xs font-medium text-[#555555]">Nome de exibição</span>
           <input
-            className="px-3 py-2 text-base md:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
             value={profile.display_name ?? ''}
             onChange={e => update('display_name', e.target.value)}
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600">Bio</span>
+          <span className="text-xs font-medium text-[#555555]">Bio</span>
           <textarea
-            className="px-3 py-2 text-base md:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+            className="px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] resize-none"
             rows={3}
             value={profile.bio ?? ''}
             onChange={e => update('bio', e.target.value)}
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-600">URL do avatar</span>
+          <span className="text-xs font-medium text-[#555555]">URL do avatar</span>
           <input
-            className="px-3 py-2 text-base md:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
             placeholder="https://..."
             value={profile.avatar_url ?? ''}
             onChange={e => update('avatar_url', e.target.value)}
@@ -601,7 +653,7 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-3 bg-[#0B76A0] text-white font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
         {saved ? 'Salvo!' : 'Salvar perfil'}
@@ -629,6 +681,8 @@ export default function Dashboard() {
       setProfile({
         ...data,
         theme_id: data.theme_id ?? 'default',
+        plan: data.plan ?? 'free',
+        role: data.role ?? 'user',
         links: (data.links ?? []).sort((a: Link, b: Link) => a.sort_order - b.sort_order),
       });
     }
@@ -639,8 +693,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0B76A0]" />
       </div>
     );
   }
@@ -659,12 +713,19 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-[#f5f5f5] flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
-        <div className="p-6 border-b border-slate-100">
-          <a href="/" className="text-lg font-bold text-slate-900 tracking-tight">linqu.es</a>
-          <p className="text-xs text-slate-400 mt-0.5">@{profile.username}</p>
+      <aside className="w-64 bg-white border-r border-[#D9D9D9] hidden md:flex flex-col">
+        <div className="p-6 border-b border-[#ebebeb]">
+          <a href="/"><img src={logo} alt="linqu.es" className="h-10 w-auto" /></a>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-xs text-[#BFBFBF]">@{profile.username}</p>
+            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md leading-tight ${
+              profile.plan === 'pro' ? 'bg-amber-400 text-black' : 'bg-[#D9D9D9] text-[#555555]'
+            }`}>
+              {profile.plan === 'pro' ? 'PRO' : 'FREE'}
+            </span>
+          </div>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {desktopTabs.map(({ id, label, icon: Icon }) => (
@@ -672,7 +733,7 @@ export default function Dashboard() {
               key={id}
               onClick={() => setTab(id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                tab === id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                tab === id ? 'bg-[#e8f4f8] text-[#095f7d]' : 'text-[#555555] hover:bg-[#f5f5f5]'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -680,19 +741,28 @@ export default function Dashboard() {
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-[#ebebeb]">
           <a
             href={`/${profile.username}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors mb-1"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-[#555555] hover:text-[#000000] hover:bg-[#f5f5f5] rounded-xl transition-colors mb-1"
           >
             <ExternalLink className="w-4 h-4" />
             Ver meu perfil
           </a>
+          {profile.role === 'admin' && (
+            <a
+              href="/admin"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-[#0B76A0] hover:bg-[#e8f4f8] rounded-xl transition-colors mb-1"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Painel Admin
+            </a>
+          )}
           <button
             onClick={() => signOut()}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#555555] hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Sair
@@ -700,9 +770,21 @@ export default function Dashboard() {
         </div>
       </aside>
 
+      {/* Mobile — ícone de perfil flutuante */}
+      <a
+        href={`/${profile.username}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ top: 'calc(0.75rem + env(safe-area-inset-top))', touchAction: 'manipulation' }}
+        className="fixed right-4 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-full bg-white border border-[#D9D9D9] text-[#0B76A0] shadow-sm hover:bg-[#e8f4f8] transition-colors"
+        aria-label="Ver meu perfil"
+      >
+        <ExternalLink className="w-4 h-4" />
+      </a>
+
       {/* Mobile tab bar */}
       <div
-        className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-slate-200 flex z-50"
+        className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-[#D9D9D9] flex z-50"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {mobileTabs.map(({ id, label, icon: Icon }) => (
@@ -711,7 +793,7 @@ export default function Dashboard() {
             onClick={() => setTab(id)}
             style={{ touchAction: 'manipulation' }}
             className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 text-[10px] font-medium transition-colors ${
-              tab === id ? 'text-indigo-600' : 'text-slate-400'
+              tab === id ? 'text-[#0B76A0]' : 'text-[#BFBFBF]'
             }`}
           >
             <Icon className="w-5 h-5" />
@@ -727,7 +809,7 @@ export default function Dashboard() {
             <MobileFullPreview profile={profile} />
           ) : (
             <div className="max-w-lg mx-auto">
-              <h2 className="text-xl font-bold text-slate-900 mb-6">
+              <h2 className="text-xl font-bold text-[#000000] mb-6">
                 {desktopTabs.find(t => t.id === tab)?.label}
               </h2>
               {tab === 'links' && <LinksTab profile={profile} onProfileChange={setProfile} />}
@@ -739,11 +821,11 @@ export default function Dashboard() {
         </main>
 
         {/* Preview panel */}
-        <div className="hidden lg:flex flex-col w-80 xl:w-96 border-l border-slate-200 bg-slate-100 p-6">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 text-center">Preview</p>
+        <div className="hidden lg:flex flex-col w-80 xl:w-96 border-l border-[#D9D9D9] bg-[#ebebeb] p-6">
+          <p className="text-xs font-semibold text-[#BFBFBF] uppercase tracking-wider mb-4 text-center">Preview</p>
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-64 h-[520px] rounded-[2.5rem] border-8 border-slate-800 shadow-2xl overflow-hidden bg-white relative">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-800 rounded-b-xl z-10" />
+            <div className="w-64 h-[520px] rounded-[2.5rem] border-8 border-[#111111] shadow-2xl overflow-hidden bg-white relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-[#111111] rounded-b-xl z-10" />
               <MobilePreview profile={profile} />
             </div>
           </div>

@@ -56,5 +56,7 @@ export interface Profile {
   button_style: string;
   font_family: string;
   theme_id: string;
+  plan: 'free' | 'pro';
+  role: 'user' | 'admin';
   links: Link[];
 }

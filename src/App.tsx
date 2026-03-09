@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import PublicProfile from './components/PublicProfile';
 import Dashboard from './components/Dashboard';
 import AuthPage from './components/AuthPage';
+import AdminPanel from './components/AdminPanel';
 import { Loader2 } from 'lucide-react';
 
 function Spinner() {
@@ -32,6 +33,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       <Route path="/entrar" element={<GuestRoute><AuthPage /></GuestRoute>} />
       <Route path="/:username" element={<PublicProfile />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
+import logo from '../assets/images/logo.png';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -74,27 +75,26 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-1 mb-2">
-            <span className="text-3xl font-black text-indigo-600">linqu</span>
-            <span className="text-3xl font-black text-slate-800">.es</span>
+          <div className="flex justify-center">
+          <img src={logo} alt="linqu.es" className="h-30 w-auto" />
           </div>
-          <p className="text-slate-500 text-sm">Seus links em um só lugar</p>
+          <p className="text-[#BFBFBF] text-sm">Seus links em um só lugar</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-          <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#D9D9D9] p-8">
+          <div className="flex gap-1 bg-[#ebebeb] rounded-lg p-1 mb-6">
             <button
               onClick={() => { setMode('login'); setError(null); setMessage(null); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'login' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'login' ? 'bg-white shadow text-[#000000]' : 'text-[#BFBFBF] hover:text-[#333333]'}`}
             >
               Entrar
             </button>
             <button
               onClick={() => { setMode('register'); setError(null); setMessage(null); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'register' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'register' ? 'bg-white shadow text-[#000000]' : 'text-[#BFBFBF] hover:text-[#333333]'}`}
             >
               Criar conta
             </button>
@@ -104,20 +104,20 @@ export default function AuthPage() {
             {mode === 'register' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Nome de exibição</label>
+                  <label className="block text-sm font-medium text-[#333333] mb-1">Nome de exibição</label>
                   <input
                     type="text"
                     value={displayName}
                     onChange={e => setDisplayName(e.target.value)}
                     placeholder="Seu nome completo"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                    className="w-full px-4 py-2.5 border border-[#D9D9D9] rounded-lg focus:ring-2 focus:ring-[#0B76A0] outline-none text-sm"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                  <div className="flex items-center border border-slate-200 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 overflow-hidden">
-                    <span className="px-3 py-2.5 bg-slate-50 text-slate-400 text-sm border-r border-slate-200 whitespace-nowrap">linqu.es/</span>
+                  <label className="block text-sm font-medium text-[#333333] mb-1">Username</label>
+                  <div className="flex items-center border border-[#D9D9D9] rounded-lg focus-within:ring-2 focus-within:ring-[#0B76A0] overflow-hidden">
+                    <span className="px-3 py-2.5 bg-[#f5f5f5] text-[#BFBFBF] text-sm border-r border-[#D9D9D9] whitespace-nowrap">linqu.es/</span>
                     <input
                       type="text"
                       value={username}
@@ -134,25 +134,25 @@ export default function AuthPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-[#333333] mb-1">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                className="w-full px-4 py-2.5 border border-[#D9D9D9] rounded-lg focus:ring-2 focus:ring-[#0B76A0] outline-none text-sm"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+              <label className="block text-sm font-medium text-[#333333] mb-1">Senha</label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                className="w-full px-4 py-2.5 border border-[#D9D9D9] rounded-lg focus:ring-2 focus:ring-[#0B76A0] outline-none text-sm"
                 required
                 minLength={6}
               />
@@ -168,7 +168,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+              className="w-full py-2.5 bg-[#0B76A0] text-white font-semibold rounded-lg hover:bg-[#095f7d] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {mode === 'login' ? 'Entrar' : 'Criar conta'}
