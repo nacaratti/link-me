@@ -1025,9 +1025,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#f5f5f5] flex">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-[#D9D9D9] hidden md:flex flex-col">
-        <div className="p-6 border-b border-[#ebebeb]">
+        <div className="p-6 border-b border-[#ebebeb] flex flex-col items-center text-center">
           <a href="/"><img src={logo} alt="linqu.es" className="h-20 w-auto" /></a>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center justify-center gap-2 mt-1">
             <p className="text-xs text-[#BFBFBF]">@{profile.username}</p>
             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md leading-tight ${
               profile.plan === 'pro' ? 'bg-amber-400 text-black' : 'bg-[#D9D9D9] text-[#555555]'
