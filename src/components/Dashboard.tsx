@@ -100,10 +100,7 @@ function MobilePreview({ profile }: { profile: Profile }) {
       className="w-full h-full relative overflow-hidden"
       style={{ backgroundColor: profile.bg_color, fontFamily: `'${profile.font_family}', sans-serif` }}
     >
-      {theme.isWebGL
-        ? <div className="absolute inset-0" style={{ ...theme.previewStyle as React.CSSProperties, position: 'absolute', zIndex: 0 }} />
-        : <ThemeBackground Background={theme.Background} themeId={profile.theme_id ?? 'default'} />
-      }
+      <ThemeBackground Background={theme.Background} themeId={profile.theme_id ?? 'default'} />
       <div className="relative h-full overflow-y-auto" style={{ zIndex: 1 }}>
         <div className="flex flex-col items-center py-10 px-4">
           <img
@@ -396,52 +393,56 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
     <div className="space-y-6">
       <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
         <h3 className="text-sm font-semibold text-[#333333]">Cores</h3>
-        {[
-          { label: 'Fundo da página', key: 'bg_color' },
-          { label: 'Cor do texto', key: 'text_color' },
-          { label: 'Texto dos botões', key: 'button_text_color' },
-        ].map(({ label, key }) => (
-          <label key={key} className="flex flex-col gap-2 cursor-pointer">
-            <span className="text-xs font-medium text-[#555555]">{label}</span>
-            <div className="flex items-center gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'Fundo da página', key: 'bg_color' },
+            { label: 'Cor do texto', key: 'text_color' },
+            { label: 'Texto dos botões', key: 'button_text_color' },
+          ].map(({ label, key }) => (
+            <label key={key} className="flex flex-col gap-2 cursor-pointer">
+              <span className="text-xs font-medium text-[#555555]">{label}</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={(profile as any)[key]?.startsWith('#') ? (profile as any)[key] : '#ffffff'}
+                  onChange={e => update(key as keyof Profile, e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+                />
+                <input
+                  type="text"
+                  value={(profile as any)[key] ?? ''}
+                  onChange={e => update(key as keyof Profile, e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
+                />
+              </div>
+            </label>
+          ))}
+
+          {/* Cor dos botões */}
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-medium text-[#555555]">Fundo dos botões</span>
+            <div className="flex items-center gap-2">
               <input
                 type="color"
-                value={(profile as any)[key]?.startsWith('#') ? (profile as any)[key] : '#ffffff'}
-                onChange={e => update(key as keyof Profile, e.target.value)}
-                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5"
+                value={btnHex}
+                onChange={e => updateButtonColor(e.target.value, btnAlpha)}
+                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
               />
               <input
                 type="text"
-                value={(profile as any)[key] ?? ''}
-                onChange={e => update(key as keyof Profile, e.target.value)}
-                className="flex-1 px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono"
+                value={btnHex}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (/^#[0-9a-fA-F]{6}$/.test(v)) updateButtonColor(v, btnAlpha);
+                }}
+                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
               />
             </div>
-          </label>
-        ))}
-
-        {/* Cor + opacidade dos botões */}
-        <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-[#555555]">Fundo dos botões</span>
-          <div className="flex items-center gap-3">
-            <input
-              type="color"
-              value={btnHex}
-              onChange={e => updateButtonColor(e.target.value, btnAlpha)}
-              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5"
-            />
-            <input
-              type="text"
-              value={btnHex}
-              onChange={e => {
-                const v = e.target.value;
-                if (/^#[0-9a-fA-F]{6}$/.test(v)) updateButtonColor(v, btnAlpha);
-              }}
-              className="flex-1 px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono"
-            />
           </div>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs text-[#888888] w-20 shrink-0">Opacidade</span>
+
+          {/* Opacidade — ocupa as 2 colunas */}
+          <div className="col-span-2 flex items-center gap-3">
+            <span className="text-xs font-medium text-[#555555] shrink-0">Opacidade dos botões</span>
             <input
               type="range"
               min={0} max={100}
@@ -449,15 +450,10 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
               onChange={e => updateButtonColor(btnHex, parseInt(e.target.value) / 100)}
               className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
             />
-            <span className="text-xs font-mono text-[#555555] w-8 text-right">
+            <span className="text-xs font-mono text-[#555555] w-8 text-right shrink-0">
               {Math.round(btnAlpha * 100)}%
             </span>
           </div>
-          {/* Preview da cor resultante */}
-          <div
-            className="mt-1 h-8 rounded-lg border border-[#D9D9D9]"
-            style={{ backgroundColor: profile.button_color }}
-          />
         </div>
       </div>
 

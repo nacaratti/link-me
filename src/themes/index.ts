@@ -20,6 +20,13 @@ const FlowBackground          = lazy(() => import('./flow/Background'));
 const FirefliesBackground     = lazy(() => import('./fireflies/Background'));
 const BubblesBackground       = lazy(() => import('./bubbles/Background'));
 
+// ── Profissões ────────────────────────────────────────────────────────────────
+const AdvogadoBackground      = lazy(() => import('./advogado/Background'));
+const MedicoBackground        = lazy(() => import('./medico/Background'));
+const DentistaBackground      = lazy(() => import('./dentista/Background'));
+const PsicologoBackground     = lazy(() => import('./psicologo/Background'));
+const DevBackground           = lazy(() => import('./dev/Background'));
+
 export const THEMES: ThemeDefinition[] = [
   // ── Clássico ──────────────────────────────────────────────────────────────
   {
@@ -186,6 +193,68 @@ export const THEMES: ThemeDefinition[] = [
     },
     Background: FirefliesBackground,
   },
+  // ── Profissões ──────────────────────────────────────────────────────────────
+  {
+    id: 'advogado',
+    name: 'Advocacia',
+    description: 'Balanças da justiça e símbolos jurídicos flutuando em fundo navy e dourado.',
+    previewStyle: { background: 'linear-gradient(160deg,#0c1017 0%,#1a1408 100%)' },
+    defaults: {
+      bg_color: '#0c1017', text_color: '#e8d5a3',
+      button_color: 'rgba(201,168,76,0.15)', button_text_color: '#c9a84c',
+      button_style: 'square', font_family: 'Playfair Display',
+    },
+    Background: AdvogadoBackground,
+  },
+  {
+    id: 'medico',
+    name: 'Medicina',
+    description: 'Linha de ECG animada e cruzes médicas em fundo clínico escuro.',
+    previewStyle: { background: 'linear-gradient(160deg,#041218 0%,#0a0a1a 100%)' },
+    defaults: {
+      bg_color: '#041218', text_color: '#f0f8ff',
+      button_color: 'rgba(229,62,62,0.15)', button_text_color: '#feb2b2',
+      button_style: 'rounded', font_family: 'Inter',
+    },
+    Background: MedicoBackground,
+  },
+  {
+    id: 'dentista',
+    name: 'Odontologia',
+    description: 'Dentes e bolhas flutuando em fundo teal escuro com brilhos mint.',
+    previewStyle: { background: 'linear-gradient(160deg,#071a17 0%,#030f0d 100%)' },
+    defaults: {
+      bg_color: '#071a17', text_color: '#a8f0e0',
+      button_color: 'rgba(168,240,224,0.12)', button_text_color: '#a8f0e0',
+      button_style: 'pill', font_family: 'Poppins',
+    },
+    Background: DentistaBackground,
+  },
+  {
+    id: 'psicologo',
+    name: 'Psicologia',
+    description: 'Ondas cerebrais e símbolos da mente flutuando em fundo lilás profundo.',
+    previewStyle: { background: 'linear-gradient(160deg,#0f0a1e 0%,#1a0a2e 100%)' },
+    defaults: {
+      bg_color: '#0f0a1e', text_color: '#e9d8fd',
+      button_color: 'rgba(183,148,244,0.15)', button_text_color: '#d6bcfa',
+      button_style: 'pill', font_family: 'Montserrat',
+    },
+    Background: PsicologoBackground,
+  },
+  {
+    id: 'dev',
+    name: 'Desenvolvedor',
+    description: 'Chuva de código estilo Matrix com símbolos de programação em verde neon.',
+    previewStyle: { background: 'linear-gradient(160deg,#081208 0%,#020802 100%)' },
+    defaults: {
+      bg_color: '#081208', text_color: '#00ff88',
+      button_color: 'rgba(0,255,136,0.1)', button_text_color: '#00ff88',
+      button_style: 'square', font_family: 'Space Grotesk',
+    },
+    Background: DevBackground,
+  },
+
   {
     id: 'bubbles',
     name: 'Bolhas',
