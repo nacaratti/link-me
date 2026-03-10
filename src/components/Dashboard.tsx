@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Reorder } from 'motion/react';
 import {
   Plus, Trash2, GripVertical, ExternalLink, Settings,
   Link as LinkIcon, Layout, Loader2, LogOut, Eye, EyeOff, Save,
-  Check, Palette, X, Smartphone, ShieldCheck,
+  Check, Palette, X, Smartphone, ShieldCheck, Camera,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
@@ -339,9 +339,35 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
 
 // ─── Appearance Tab ───────────────────────────────────────────────────────────
 
+function colorToHexAndAlpha(color: string): [string, number] {
+  const m = color.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\s*\)/);
+  if (m) {
+    const r = parseInt(m[1]).toString(16).padStart(2, '0');
+    const g = parseInt(m[2]).toString(16).padStart(2, '0');
+    const b = parseInt(m[3]).toString(16).padStart(2, '0');
+    return [`#${r}${g}${b}`, m[4] !== undefined ? parseFloat(m[4]) : 1];
+  }
+  if (color.startsWith('#') && color.length >= 7) return [color.slice(0, 7), 1];
+  return ['#ffffff', 1];
+}
+
+function hexAlphaToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  if (alpha >= 1) return hex;
+  return `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
+}
+
 function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    FONT_OPTIONS.forEach(opt => loadGoogleFont(opt.value));
+  }, []);
+
+  const [btnHex, btnAlpha] = colorToHexAndAlpha(profile.button_color ?? '#ffffff');
 
   async function handleSave() {
     setSaving(true);
@@ -362,6 +388,10 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
     onProfileChange({ ...profile, [key]: value });
   }
 
+  function updateButtonColor(hex: string, alpha: number) {
+    update('button_color', hexAlphaToRgba(hex, alpha));
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
@@ -369,7 +399,6 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
         {[
           { label: 'Fundo da página', key: 'bg_color' },
           { label: 'Cor do texto', key: 'text_color' },
-          { label: 'Fundo dos botões', key: 'button_color' },
           { label: 'Texto dos botões', key: 'button_text_color' },
         ].map(({ label, key }) => (
           <label key={key} className="flex flex-col gap-2 cursor-pointer">
@@ -390,6 +419,46 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
             </div>
           </label>
         ))}
+
+        {/* Cor + opacidade dos botões */}
+        <div className="flex flex-col gap-2">
+          <span className="text-xs font-medium text-[#555555]">Fundo dos botões</span>
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              value={btnHex}
+              onChange={e => updateButtonColor(e.target.value, btnAlpha)}
+              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5"
+            />
+            <input
+              type="text"
+              value={btnHex}
+              onChange={e => {
+                const v = e.target.value;
+                if (/^#[0-9a-fA-F]{6}$/.test(v)) updateButtonColor(v, btnAlpha);
+              }}
+              className="flex-1 px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono"
+            />
+          </div>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-xs text-[#888888] w-20 shrink-0">Opacidade</span>
+            <input
+              type="range"
+              min={0} max={100}
+              value={Math.round(btnAlpha * 100)}
+              onChange={e => updateButtonColor(btnHex, parseInt(e.target.value) / 100)}
+              className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
+            />
+            <span className="text-xs font-mono text-[#555555] w-8 text-right">
+              {Math.round(btnAlpha * 100)}%
+            </span>
+          </div>
+          {/* Preview da cor resultante */}
+          <div
+            className="mt-1 h-8 rounded-lg border border-[#D9D9D9]"
+            style={{ backgroundColor: profile.button_color }}
+          />
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-3">
@@ -598,18 +667,215 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   );
 }
 
+// ─── Crop Modal ───────────────────────────────────────────────────────────────
+
+const CROP_VIEWPORT = 272;
+const CROP_OUTPUT   = 400;
+
+function CropModal({ file, onConfirm, onCancel }: {
+  file: File;
+  onConfirm: (blob: Blob) => void;
+  onCancel: () => void;
+}) {
+  const [imgSrc, setImgSrc]         = useState('');
+  const [natSize, setNatSize]       = useState({ w: 0, h: 0 });
+  const [minScale, setMinScale]     = useState(1);
+  const [scale, setScale]           = useState(1);
+  const [offset, setOffset]         = useState({ x: 0, y: 0 });
+  const [dragging, setDragging]     = useState(false);
+  const dragStart                   = useRef({ x: 0, y: 0 });
+  const imgRef                      = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setImgSrc(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const img = e.currentTarget;
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const min = CROP_VIEWPORT / Math.min(w, h);
+    setNatSize({ w, h });
+    setMinScale(min);
+    setScale(min);
+    setOffset({ x: 0, y: 0 });
+  }
+
+  function clamp(off: { x: number; y: number }, s: number) {
+    const dW = natSize.w * s, dH = natSize.h * s;
+    const mX = Math.max(0, (dW - CROP_VIEWPORT) / 2);
+    const mY = Math.max(0, (dH - CROP_VIEWPORT) / 2);
+    return { x: Math.min(mX, Math.max(-mX, off.x)), y: Math.min(mY, Math.max(-mY, off.y)) };
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragging(true);
+    dragStart.current = { x: e.clientX - offset.x, y: e.clientY - offset.y };
+  }
+  function onPointerMove(e: React.PointerEvent) {
+    if (!dragging) return;
+    setOffset(clamp({ x: e.clientX - dragStart.current.x, y: e.clientY - dragStart.current.y }, scale));
+  }
+  function onPointerUp() { setDragging(false); }
+
+  function onZoom(e: React.ChangeEvent<HTMLInputElement>) {
+    const newScale = parseFloat(e.target.value);
+    // Escala o offset proporcionalmente para manter o ponto central do viewport fixo
+    const factor = newScale / scale;
+    setOffset(prev => clamp({ x: prev.x * factor, y: prev.y * factor }, newScale));
+    setScale(newScale);
+  }
+
+  function handleConfirm() {
+    const img = imgRef.current!;
+    const renderedW = img.offsetWidth;
+    const renderedH = img.offsetHeight;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = CROP_OUTPUT;
+    const ctx = canvas.getContext('2d')!;
+    const ratio = CROP_OUTPUT / CROP_VIEWPORT;
+    // Mesma fórmula que o CSS: left=50%+offsetX → img top-left em (VP/2 + offsetX - renderedW/2)
+    const left = (CROP_VIEWPORT / 2 + offset.x - renderedW / 2) * ratio;
+    const top  = (CROP_VIEWPORT / 2 + offset.y - renderedH / 2) * ratio;
+    ctx.beginPath();
+    ctx.arc(CROP_OUTPUT / 2, CROP_OUTPUT / 2, CROP_OUTPUT / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(img, left, top, renderedW * ratio, renderedH * ratio);
+    canvas.toBlob(b => { if (b) onConfirm(b); }, 'image/webp', 0.85);
+  }
+
+  const dW = natSize.w * scale, dH = natSize.h * scale;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-[#111]">Reposicionar foto</h3>
+          <p className="text-xs text-[#BFBFBF] mt-0.5">Arraste para posicionar · Slider para zoom</p>
+        </div>
+
+        {/* Viewport circular */}
+        <div className="flex justify-center">
+          <div
+            className="relative overflow-hidden rounded-full ring-2 ring-[#0B76A0] ring-offset-2"
+            style={{
+              width: CROP_VIEWPORT, height: CROP_VIEWPORT,
+              background: '#ddd',
+              cursor: dragging ? 'grabbing' : 'grab',
+              touchAction: 'none',
+            }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerLeave={onPointerUp}
+          >
+            {imgSrc && (
+              <div
+                style={{
+                  position: 'absolute',
+                  width: dW || CROP_VIEWPORT,
+                  height: dH || CROP_VIEWPORT,
+                  left: dW ? CROP_VIEWPORT / 2 + offset.x - dW / 2 : 0,
+                  top: dH ? CROP_VIEWPORT / 2 + offset.y - dH / 2 : 0,
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                }}
+              >
+                <img
+                  ref={imgRef}
+                  src={imgSrc}
+                  alt=""
+                  draggable={false}
+                  onLoad={onImageLoad}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Zoom */}
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-[#888] shrink-0 w-8">Zoom</span>
+          <input
+            type="range"
+            min={minScale} max={minScale * 3} step={0.001}
+            value={scale}
+            onChange={onZoom}
+            className="flex-1 accent-[#0B76A0]"
+            disabled={natSize.w === 0}
+          />
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2.5 border border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:bg-[#f5f5f5] transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="flex-1 py-2.5 bg-[#0B76A0] rounded-xl text-sm text-white font-medium hover:bg-[#095f7d] transition-colors"
+          >
+            Aplicar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Profile Tab ──────────────────────────────────────────────────────────────
 
 function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saving, setSaving]         = useState(false);
+  const [saved, setSaved]           = useState(false);
+  const [uploading, setUploading]   = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [cropFile, setCropFile]     = useState<File | null>(null);
+  const fileInputRef                = useRef<HTMLInputElement>(null);
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setCropFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  async function handleCropConfirm(blob: Blob) {
+    setCropFile(null);
+    setUploading(true);
+    try {
+      const path = `${profile.id}/avatar.webp`;
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { upsert: true, contentType: 'image/webp' });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+      const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
+      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', profile.id);
+      onProfileChange({ ...profile, avatar_url: publicUrl });
+    } catch {
+      setUploadError('Erro ao enviar imagem. Tente novamente.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
     await supabase.from('profiles').update({
       display_name: profile.display_name,
       bio: profile.bio,
-      avatar_url: profile.avatar_url,
     }).eq('id', profile.id);
     setSaving(false);
     setSaved(true);
@@ -622,7 +888,59 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
 
   return (
     <div className="space-y-4">
+      {cropFile && (
+        <CropModal
+          file={cropFile}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropFile(null)}
+        />
+      )}
+
       <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+
+        {/* Avatar upload */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative">
+            <img
+              src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`}
+              alt="Avatar"
+              className="w-24 h-24 rounded-full object-cover border-2 border-[#D9D9D9] shadow-sm"
+              referrerPolicy="no-referrer"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/40 opacity-0 hover:opacity-100 transition-opacity text-white disabled:cursor-not-allowed"
+            >
+              {uploading
+                ? <Loader2 className="w-5 h-5 animate-spin" />
+                : <Camera className="w-5 h-5" />
+              }
+              {!uploading && <span className="text-[10px] font-medium mt-0.5">Trocar</span>}
+            </button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="text-xs text-[#0B76A0] hover:underline disabled:opacity-50"
+          >
+            {uploading ? 'Enviando…' : 'Alterar foto de perfil'}
+          </button>
+          {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+          <p className="text-[11px] text-[#BFBFBF] text-center">
+            JPG, PNG ou WebP · Recorte circular 400×400 px
+          </p>
+        </div>
+
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-[#555555]">Nome de exibição</span>
           <input
@@ -638,15 +956,6 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
             rows={3}
             value={profile.bio ?? ''}
             onChange={e => update('bio', e.target.value)}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-[#555555]">URL do avatar</span>
-          <input
-            className="px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
-            placeholder="https://..."
-            value={profile.avatar_url ?? ''}
-            onChange={e => update('avatar_url', e.target.value)}
           />
         </label>
       </div>
@@ -717,7 +1026,7 @@ export default function Dashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-[#D9D9D9] hidden md:flex flex-col">
         <div className="p-6 border-b border-[#ebebeb]">
-          <a href="/"><img src={logo} alt="linqu.es" className="h-10 w-auto" /></a>
+          <a href="/"><img src={logo} alt="linqu.es" className="h-20 w-auto" /></a>
           <div className="flex items-center gap-2 mt-1">
             <p className="text-xs text-[#BFBFBF]">@{profile.username}</p>
             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md leading-tight ${

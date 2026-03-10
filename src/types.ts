@@ -23,6 +23,12 @@ export const FONT_OPTIONS = [
   { label: 'Montserrat', value: 'Montserrat' },
   { label: 'Space Grotesk', value: 'Space Grotesk' },
   { label: 'Playfair Display', value: 'Playfair Display' },
+  { label: 'Nunito', value: 'Nunito' },
+  { label: 'Lato', value: 'Lato' },
+  { label: 'DM Sans', value: 'DM Sans' },
+  { label: 'Raleway', value: 'Raleway' },
+  { label: 'Ubuntu', value: 'Ubuntu' },
+  { label: 'Josefin Sans', value: 'Josefin Sans' },
 ];
 
 export const BUTTON_STYLE_OPTIONS = [

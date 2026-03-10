@@ -18,6 +18,7 @@ const ConstellationBackground = lazy(() => import('./constellation/Background'))
 const RippleBackground        = lazy(() => import('./ripple/Background'));
 const FlowBackground          = lazy(() => import('./flow/Background'));
 const FirefliesBackground     = lazy(() => import('./fireflies/Background'));
+const BubblesBackground       = lazy(() => import('./bubbles/Background'));
 
 export const THEMES: ThemeDefinition[] = [
   // ── Clássico ──────────────────────────────────────────────────────────────
@@ -184,6 +185,18 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'rounded', font_family: 'Inter',
     },
     Background: FirefliesBackground,
+  },
+  {
+    id: 'bubbles',
+    name: 'Bolhas',
+    description: 'Bolinhas coloridas translúcidas subindo suavemente pela tela.',
+    previewStyle: { background: 'linear-gradient(180deg,#0d1b2a 0%,#1a0d2e 100%)' },
+    defaults: {
+      bg_color: '#0d1b2a', text_color: '#ffffff',
+      button_color: 'rgba(255,255,255,0.12)', button_text_color: '#ffffff',
+      button_style: 'pill', font_family: 'Poppins',
+    },
+    Background: BubblesBackground,
   },
 ];
 
