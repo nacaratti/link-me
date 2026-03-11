@@ -49,7 +49,7 @@ export const THEMES: ThemeDefinition[] = [
     previewStyle: { background: 'radial-gradient(ellipse at 35% 65%,#2a1f2a 0%,#0a0a0a 100%)' },
     defaults: {
       bg_color: '#0a0a0a', text_color: '#f0f0f0',
-      button_color: 'rgba(255,255,255,0.08)', button_text_color: '#f0f0f0',
+      button_color: 'rgba(255,255,255,0.50)', button_text_color: '#000000',
       button_style: 'pill', font_family: 'Space Grotesk',
     },
     Background: MercuryBackground,
