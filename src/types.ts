@@ -29,14 +29,29 @@ export const FONT_OPTIONS = [
   { label: 'Raleway', value: 'Raleway' },
   { label: 'Ubuntu', value: 'Ubuntu' },
   { label: 'Josefin Sans', value: 'Josefin Sans' },
+  { label: 'Alfa Slab One', value: 'Alfa Slab One' },
+  { label: 'Chango', value: 'Chango' },
+  { label: 'Salsa', value: 'Salsa' },
+  { label: 'Bebas Neue', value: 'Bebas Neue' },
+  { label: 'Pacifico', value: 'Pacifico' },
+  { label: 'Lobster', value: 'Lobster' },
+  { label: 'Righteous', value: 'Righteous' },
+  { label: 'Orbitron', value: 'Orbitron' },
+  { label: 'Fredoka One', value: 'Fredoka One' },
 ];
 
 export const BUTTON_STYLE_OPTIONS = [
-  { label: 'Arredondado', value: 'rounded', class: 'rounded-xl' },
-  { label: 'Pílula', value: 'pill', class: 'rounded-full' },
-  { label: 'Quadrado', value: 'square', class: 'rounded-none' },
-  { label: 'Contorno', value: 'outline', class: 'rounded-xl' },
+  { label: 'Pílula',      value: 'pill',    radius: '9999px' },
+  { label: 'Arredondado', value: 'rounded', radius: '14px'   },
+  { label: 'Suave',       value: 'soft',    radius: '6px'    },
+  { label: 'Quadrado',    value: 'square',  radius: '0px'    },
+  { label: 'Folha',       value: 'leaf',    radius: '20px 4px' },
+  { label: 'Onda',        value: 'wave',    radius: '0px 16px' },
 ];
+
+export function getButtonRadius(style?: string): string {
+  return BUTTON_STYLE_OPTIONS.find(o => o.value === style)?.radius ?? '14px';
+}
 
 export interface Link {
   id: number;
@@ -61,6 +76,15 @@ export interface Profile {
   button_text_color: string;
   button_style: string;
   font_family: string;
+  title_color?: string;
+  title_font?: string;
+  subtitle_color?: string;
+  subtitle_font?: string;
+  button_font?: string;
+  button_border_width?: string;
+  button_border_color?: string;
+  bg_image_url?: string;
+  bg_position?: string;
   theme_id: string;
   plan: 'free' | 'pro';
   role: 'user' | 'admin';

@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
 import { getTheme } from '../themes';
-import { ICON_MAP } from '../types';
+import { ICON_MAP, getButtonRadius } from '../types';
 import ThemeBackground from '../themes/ThemeBackground';
 import { ExternalLink, AlertCircle } from 'lucide-react';
 import type { Profile } from '../types';
@@ -35,6 +35,9 @@ export default function PublicProfile() {
         };
         setProfile(sorted);
         if (data.font_family) loadGoogleFont(data.font_family);
+        if (data.title_font) loadGoogleFont(data.title_font);
+        if (data.subtitle_font) loadGoogleFont(data.subtitle_font);
+        if (data.button_font) loadGoogleFont(data.button_font);
       }
       setLoading(false);
     }
@@ -68,17 +71,61 @@ export default function PublicProfile() {
   }
 
   const theme = getTheme(profile.theme_id);
-  const isOutline = profile.button_style === 'outline';
-  const btnRadius = {
-    rounded: 'rounded-xl', pill: 'rounded-full',
-    square: 'rounded-none', outline: 'rounded-xl',
-  }[profile.button_style] ?? 'rounded-xl';
+  const btnRadius = getButtonRadius(profile.button_style);
+  const btnBorderWidth = parseInt(profile.button_border_width ?? '0');
+  const btnBorderStyle = btnBorderWidth > 0
+    ? { border: `${btnBorderWidth}px solid ${profile.button_border_color ?? profile.button_text_color}` }
+    : {};
 
   return (
     <div
       className="min-h-screen relative overflow-hidden flex flex-col items-center py-10 sm:py-16 px-4"
-      style={{ backgroundColor: profile.bg_color, fontFamily: `'${profile.font_family}', sans-serif` }}
+      style={{
+        backgroundColor: profile.bg_color,
+        fontFamily: `'${profile.font_family}', sans-serif`,
+      }}
     >
+      {/* Background image — centralizada na coluna de conteúdo no desktop */}
+      {profile.bg_image_url && (
+        <>
+          {/* Mobile: imagem cobre tudo */}
+          <div
+            className="absolute inset-0 sm:hidden"
+            style={{
+              backgroundImage: `url(${profile.bg_image_url})`,
+              backgroundSize: 'cover',
+              backgroundPosition: profile.bg_position ?? 'center',
+            }}
+          />
+          {/* Desktop: imagem centralizada com largura limitada + degradê nas laterais */}
+          <div className="absolute inset-0 hidden sm:flex items-stretch justify-center">
+            <div
+              className="w-full max-w-[580px] flex-shrink-0 my-4 rounded-[2.5rem] overflow-hidden shadow-2xl"
+              style={{
+                backgroundImage: `url(${profile.bg_image_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: profile.bg_position ?? 'center',
+              }}
+            />
+          </div>
+          {/* Gradientes laterais — só desktop */}
+          <div
+            className="absolute inset-y-0 left-0 hidden sm:block pointer-events-none"
+            style={{
+              width: 'calc((100% - 580px) / 2 + 60px)',
+              background: `linear-gradient(to right, ${profile.bg_color} 50%, transparent 100%)`,
+            }}
+          />
+          <div
+            className="absolute inset-y-0 right-0 hidden sm:block pointer-events-none"
+            style={{
+              width: 'calc((100% - 580px) / 2 + 60px)',
+              background: `linear-gradient(to left, ${profile.bg_color} 50%, transparent 100%)`,
+            }}
+          />
+        </>
+      )}
+
       {/* Theme background layer */}
       <ThemeBackground Background={theme.Background} themeId={profile.theme_id} />
 
@@ -96,17 +143,29 @@ export default function PublicProfile() {
             className="w-24 h-24 rounded-full border-4 border-white/20 shadow-lg mb-4 object-cover"
             referrerPolicy="no-referrer"
           />
-          <h1 className="text-xl font-bold mb-1" style={{ color: profile.text_color }}>
+          <h1
+            className="text-xl font-bold mb-1"
+            style={{
+              color: profile.title_color || profile.text_color,
+              fontFamily: profile.title_font ? `'${profile.title_font}', sans-serif` : undefined,
+            }}
+          >
             {profile.display_name}
           </h1>
           {profile.bio && (
-            <p className="text-sm max-w-[300px] opacity-75" style={{ color: profile.text_color }}>
+            <p
+              className="text-sm max-w-[300px] opacity-75"
+              style={{
+                color: profile.subtitle_color || profile.text_color,
+                fontFamily: profile.subtitle_font ? `'${profile.subtitle_font}', sans-serif` : undefined,
+              }}
+            >
               {profile.bio}
             </p>
           )}
         </div>
 
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full sm:w-[420px] flex flex-col gap-3">
           {profile.links.map((link, index) => {
             const Icon = ICON_MAP[link.icon_type] ?? ExternalLink;
             return (
@@ -121,19 +180,25 @@ export default function PublicProfile() {
                 transition={{ delay: index * 0.07 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`flex items-center justify-between px-4 shadow-sm transition-all group backdrop-blur-sm ${btnRadius} ${isOutline ? 'border-2' : ''}`}
+                className="flex items-center justify-between px-4 shadow-sm transition-all group backdrop-blur-sm"
                 style={{
-                  minHeight: '56px',
-                  backgroundColor: isOutline ? 'transparent' : profile.button_color,
+                  minHeight: '50px',
+                  backgroundColor: profile.button_color,
                   color: profile.button_text_color,
-                  borderColor: isOutline ? profile.button_text_color : undefined,
+                  borderRadius: btnRadius,
+                  ...btnBorderStyle,
                 }}
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors">
                     <Icon className="w-5 h-5" />
                   </div>
-                  <span className="font-medium">{link.title}</span>
+                  <span
+                  className="font-medium"
+                  style={{ fontFamily: profile.button_font ? `'${profile.button_font}', sans-serif` : undefined }}
+                >
+                  {link.title}
+                </span>
                 </div>
                 <ExternalLink className="w-4 h-4 opacity-20 group-hover:opacity-50 transition-opacity" />
               </motion.a>

@@ -13,4 +13,6 @@ export interface ThemeDefinition {
   Background?: React.ComponentType;
   /** True for WebGL (Three.js) themes — skipped in MobilePreview to avoid context limits */
   isWebGL?: boolean;
+  /** Explicit group override; defaults to 'animated' if Background exists, 'static' otherwise */
+  group?: 'static' | 'animated';
 }

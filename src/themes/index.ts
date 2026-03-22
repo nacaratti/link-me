@@ -10,7 +10,6 @@ const VoidBackground        = lazy(() => import('./void/Background'));
 const AuroraBackground      = lazy(() => import('./aurora/Background'));
 const SunsetBackground      = lazy(() => import('./sunset/Background'));
 const NeonBackground        = lazy(() => import('./neon/Background'));
-const BlobBackground        = lazy(() => import('./blob/Background'));
 
 // ── Canvas 2D ─────────────────────────────────────────────────────────────────
 const LaserBackground         = lazy(() => import('./laser/Background'));
@@ -50,7 +49,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#0a0a0a', text_color: '#f0f0f0',
       button_color: 'rgba(255,255,255,0.50)', button_text_color: '#000000',
-      button_style: 'pill', font_family: 'Space Grotesk',
+      button_style: 'leaf', font_family: 'Space Grotesk',
     },
     Background: MercuryBackground,
     isWebGL: true,
@@ -63,7 +62,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#000000', text_color: '#ffffff',
       button_color: 'rgba(255,255,255,0.08)', button_text_color: '#ffffff',
-      button_style: 'pill', font_family: 'Space Grotesk',
+      button_style: 'pill', font_family: 'Orbitron',
     },
     Background: QuantumBackground,
     isWebGL: true,
@@ -76,7 +75,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#010101', text_color: '#ffffff',
       button_color: 'rgba(0,255,255,0.1)', button_text_color: '#00ffff',
-      button_style: 'pill', font_family: 'Space Grotesk',
+      button_style: 'wave', font_family: 'Orbitron',
     },
     Background: LaserBackground,
   },
@@ -88,7 +87,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#050505', text_color: '#e0e7ff',
       button_color: 'rgba(165,180,252,0.1)', button_text_color: '#e0e7ff',
-      button_style: 'pill', font_family: 'Space Grotesk',
+      button_style: 'soft', font_family: 'Raleway',
     },
     Background: VoidBackground,
     isWebGL: true,
@@ -103,7 +102,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#030d1a', text_color: '#d0fff0',
       button_color: 'rgba(0,200,120,0.12)', button_text_color: '#a0ffd0',
-      button_style: 'pill', font_family: 'Space Grotesk',
+      button_style: 'leaf', font_family: 'Raleway',
     },
     Background: AuroraBackground,
   },
@@ -115,7 +114,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#12001e', text_color: '#ffd4a8',
       button_color: 'rgba(255,100,50,0.15)', button_text_color: '#ffb080',
-      button_style: 'pill', font_family: 'Playfair Display',
+      button_style: 'wave', font_family: 'Playfair Display',
     },
     Background: SunsetBackground,
   },
@@ -127,21 +126,9 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#000000', text_color: '#00ffee',
       button_color: 'rgba(0,255,220,0.08)', button_text_color: '#00ffee',
-      button_style: 'square', font_family: 'Space Grotesk',
+      button_style: 'square', font_family: 'Orbitron',
     },
     Background: NeonBackground,
-  },
-  {
-    id: 'blob',
-    name: 'Liquid Blob',
-    description: 'Bolhas orgânicas em pastel se deformando suavemente.',
-    previewStyle: { background: 'linear-gradient(135deg,#f0e8ff 0%,#e8f5f0 50%,#ffe8f0 100%)' },
-    defaults: {
-      bg_color: '#f5eeff', text_color: '#3d1a6e',
-      button_color: 'rgba(255,255,255,0.65)', button_text_color: '#5b2d9e',
-      button_style: 'pill', font_family: 'Poppins',
-    },
-    Background: BlobBackground,
   },
 
   // ── Canvas 2D ──────────────────────────────────────────────────────────────
@@ -153,7 +140,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#050812', text_color: '#c8d8ff',
       button_color: 'rgba(150,180,255,0.1)', button_text_color: '#a8c0ff',
-      button_style: 'rounded', font_family: 'Space Grotesk',
+      button_style: 'pill', font_family: 'Space Grotesk',
     },
     Background: ConstellationBackground,
   },
@@ -165,7 +152,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#02151f', text_color: '#90ffe8',
       button_color: 'rgba(0,200,180,0.12)', button_text_color: '#60ffd8',
-      button_style: 'rounded', font_family: 'Inter',
+      button_style: 'wave', font_family: 'Josefin Sans',
     },
     Background: RippleBackground,
   },
@@ -177,7 +164,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#0a0805', text_color: '#ffd080',
       button_color: 'rgba(255,180,50,0.1)', button_text_color: '#ffcc60',
-      button_style: 'pill', font_family: 'Poppins',
+      button_style: 'leaf', font_family: 'Raleway',
     },
     Background: FlowBackground,
   },
@@ -189,7 +176,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#020d05', text_color: '#c8ffcc',
       button_color: 'rgba(100,255,100,0.08)', button_text_color: '#80ff90',
-      button_style: 'rounded', font_family: 'Inter',
+      button_style: 'soft', font_family: 'Nunito',
     },
     Background: FirefliesBackground,
   },
@@ -205,6 +192,7 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'square', font_family: 'Playfair Display',
     },
     Background: AdvogadoBackground,
+    group: 'static',
   },
   {
     id: 'medico',
@@ -217,6 +205,7 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'rounded', font_family: 'Inter',
     },
     Background: MedicoBackground,
+    group: 'static',
   },
   {
     id: 'dentista',
@@ -226,9 +215,10 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#071a17', text_color: '#a8f0e0',
       button_color: 'rgba(168,240,224,0.12)', button_text_color: '#a8f0e0',
-      button_style: 'pill', font_family: 'Poppins',
+      button_style: 'pill', font_family: 'Josefin Sans',
     },
     Background: DentistaBackground,
+    group: 'static',
   },
   {
     id: 'psicologo',
@@ -238,9 +228,10 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#0f0a1e', text_color: '#e9d8fd',
       button_color: 'rgba(183,148,244,0.15)', button_text_color: '#d6bcfa',
-      button_style: 'pill', font_family: 'Montserrat',
+      button_style: 'soft', font_family: 'Raleway',
     },
     Background: PsicologoBackground,
+    group: 'static',
   },
   {
     id: 'dev',
@@ -250,9 +241,10 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#081208', text_color: '#00ff88',
       button_color: 'rgba(0,255,136,0.1)', button_text_color: '#00ff88',
-      button_style: 'square', font_family: 'Space Grotesk',
+      button_style: 'square', font_family: 'Orbitron',
     },
     Background: DevBackground,
+    group: 'static',
   },
 
   {
@@ -263,7 +255,7 @@ export const THEMES: ThemeDefinition[] = [
     defaults: {
       bg_color: '#0d1b2a', text_color: '#ffffff',
       button_color: 'rgba(255,255,255,0.12)', button_text_color: '#ffffff',
-      button_style: 'pill', font_family: 'Poppins',
+      button_style: 'pill', font_family: 'Fredoka One',
     },
     Background: BubblesBackground,
   },

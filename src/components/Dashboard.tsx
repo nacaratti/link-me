@@ -8,7 +8,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
 import { useAuth } from '../contexts/AuthContext';
-import { ICON_MAP, FONT_OPTIONS, BUTTON_STYLE_OPTIONS, type Profile, type Link } from '../types';
+import { ICON_MAP, FONT_OPTIONS, BUTTON_STYLE_OPTIONS, getButtonRadius, type Profile, type Link } from '../types';
 import { THEMES, getTheme } from '../themes';
 import ThemeBackground from '../themes/ThemeBackground';
 import logo from '../assets/images/logo.png';
@@ -25,11 +25,11 @@ function MobileFullPreview({ profile }: { profile: Profile }) {
   }, [profile.font_family]);
 
   const theme = getTheme(profile.theme_id ?? 'default');
-  const isOutline = profile.button_style === 'outline';
-  const btnRadius = {
-    rounded: 'rounded-xl', pill: 'rounded-full',
-    square: 'rounded-none', outline: 'rounded-xl',
-  }[profile.button_style] ?? 'rounded-xl';
+  const btnRadius = getButtonRadius(profile.button_style);
+  const btnBorderWidth = parseInt(profile.button_border_width ?? '0');
+  const btnBorderStyle = btnBorderWidth > 0
+    ? { border: `${btnBorderWidth}px solid ${profile.button_border_color ?? profile.button_text_color}` }
+    : {};
 
   return (
     <div
@@ -57,12 +57,13 @@ function MobileFullPreview({ profile }: { profile: Profile }) {
             return (
               <div
                 key={link.id}
-                className={`flex items-center gap-3 px-4 ${btnRadius} ${isOutline ? 'border-2' : ''}`}
+                className="flex items-center gap-3 px-4"
                 style={{
-                  backgroundColor: isOutline ? 'transparent' : profile.button_color,
+                  backgroundColor: profile.button_color,
                   color: profile.button_text_color,
-                  borderColor: isOutline ? profile.button_text_color : undefined,
+                  borderRadius: btnRadius,
                   minHeight: '52px',
+                  ...btnBorderStyle,
                 }}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
@@ -89,16 +90,22 @@ function MobilePreview({ profile }: { profile: Profile }) {
   }, [profile.font_family]);
 
   const theme = getTheme(profile.theme_id ?? 'default');
-  const isOutline = profile.button_style === 'outline';
-  const btnRadius = {
-    rounded: 'rounded-xl', pill: 'rounded-full',
-    square: 'rounded-none', outline: 'rounded-xl',
-  }[profile.button_style] ?? 'rounded-xl';
+  const btnRadius = getButtonRadius(profile.button_style);
+  const btnBorderWidth = parseInt(profile.button_border_width ?? '0');
+  const btnBorderStyle = btnBorderWidth > 0
+    ? { border: `${btnBorderWidth}px solid ${profile.button_border_color ?? profile.button_text_color}` }
+    : {};
 
   return (
     <div
       className="w-full h-full relative overflow-hidden"
-      style={{ backgroundColor: profile.bg_color, fontFamily: `'${profile.font_family}', sans-serif` }}
+      style={{
+        backgroundColor: profile.bg_color,
+        backgroundImage: profile.bg_image_url ? `url(${profile.bg_image_url})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: profile.bg_position ?? 'center',
+        fontFamily: `'${profile.font_family}', sans-serif`,
+      }}
     >
       <ThemeBackground Background={theme.Background} themeId={profile.theme_id ?? 'default'} />
       <div className="relative h-full overflow-y-auto" style={{ zIndex: 1 }}>
@@ -108,11 +115,23 @@ function MobilePreview({ profile }: { profile: Profile }) {
             className="w-16 h-16 rounded-full border-4 border-white/20 shadow-md mb-2 object-cover"
             referrerPolicy="no-referrer"
           />
-          <h1 className="font-bold text-base text-center mb-1" style={{ color: profile.text_color }}>
+          <h1
+            className="font-bold text-base text-center mb-1"
+            style={{
+              color: profile.title_color || profile.text_color,
+              fontFamily: profile.title_font ? `'${profile.title_font}', sans-serif` : undefined,
+            }}
+          >
             {profile.display_name || profile.username}
           </h1>
           {profile.bio && (
-            <p className="text-xs text-center opacity-70 mb-4 max-w-[200px]" style={{ color: profile.text_color }}>
+            <p
+              className="text-xs text-center opacity-70 mb-4 max-w-[200px]"
+              style={{
+                color: profile.subtitle_color || profile.text_color,
+                fontFamily: profile.subtitle_font ? `'${profile.subtitle_font}', sans-serif` : undefined,
+              }}
+            >
               {profile.bio}
             </p>
           )}
@@ -122,11 +141,13 @@ function MobilePreview({ profile }: { profile: Profile }) {
               return (
                 <div
                   key={link.id}
-                  className={`flex items-center gap-2 p-2.5 backdrop-blur-sm ${btnRadius} ${isOutline ? 'border-2' : ''}`}
+                  className="flex items-center gap-2 p-2.5 backdrop-blur-sm"
                   style={{
-                    backgroundColor: isOutline ? 'transparent' : profile.button_color,
+                    backgroundColor: profile.button_color,
                     color: profile.button_text_color,
-                    borderColor: isOutline ? profile.button_text_color : undefined,
+                    borderRadius: btnRadius,
+                    fontFamily: profile.button_font ? `'${profile.button_font}', sans-serif` : undefined,
+                    ...btnBorderStyle,
                   }}
                 >
                   <div className="p-1 rounded-md bg-white/10">
@@ -356,9 +377,161 @@ function hexAlphaToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
 }
 
+function compressImage(file: File, maxWidth = 1920, quality = 0.82): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxWidth / img.naturalWidth);
+      const w = Math.round(img.naturalWidth * scale);
+      const h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/webp', quality);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function BgPositionModal({ imageUrl, initialPosition, onConfirm, onClose }: {
+  imageUrl: string;
+  initialPosition: string;
+  onConfirm: (position: string) => void;
+  onClose: () => void;
+}) {
+  const parsePos = (pos: string) => {
+    const [x, y] = pos.split(' ').map(v => parseFloat(v) || 50);
+    return { x, y };
+  };
+  const [pos, setPos] = useState(() => parsePos(initialPosition));
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const lastPtr = useRef({ x: 0, y: 0 });
+
+  function onPointerDown(e: React.PointerEvent) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragging.current = true;
+    lastPtr.current = { x: e.clientX, y: e.clientY };
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!dragging.current || !containerRef.current) return;
+    const { width, height } = containerRef.current.getBoundingClientRect();
+    const dx = e.clientX - lastPtr.current.x;
+    const dy = e.clientY - lastPtr.current.y;
+    lastPtr.current = { x: e.clientX, y: e.clientY };
+    setPos(prev => ({
+      x: Math.min(100, Math.max(0, prev.x - (dx / width) * 100)),
+      y: Math.min(100, Math.max(0, prev.y - (dy / height) * 100)),
+    }));
+  }
+
+  function onPointerUp() { dragging.current = false; }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-[#111]">Reposicionar foto de fundo</h3>
+          <p className="text-xs text-[#BFBFBF] mt-0.5">Arraste para escolher o enquadramento</p>
+        </div>
+
+        {/* Preview */}
+        <div className="flex justify-center">
+          <div
+            ref={containerRef}
+            className="relative overflow-hidden rounded-2xl ring-2 ring-[#0B76A0] ring-offset-2"
+            style={{ width: 220, height: 390, cursor: dragging.current ? 'grabbing' : 'grab', touchAction: 'none' }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerLeave={onPointerUp}
+          >
+            <img
+              src={imageUrl}
+              draggable={false}
+              className="w-full h-full select-none"
+              style={{ objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, userSelect: 'none' }}
+            />
+            {/* crosshair */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-6 h-px bg-white/60" />
+              <div className="absolute w-px h-6 bg-white/60" />
+            </div>
+          </div>
+        </div>
+
+        {/* Sliders */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#555] w-16 shrink-0">Horizontal</span>
+            <input type="range" min={0} max={100} value={Math.round(pos.x)}
+              onChange={e => setPos(p => ({ ...p, x: parseInt(e.target.value) }))}
+              className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
+            />
+            <span className="text-xs font-mono text-[#555] w-8 text-right">{Math.round(pos.x)}%</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#555] w-16 shrink-0">Vertical</span>
+            <input type="range" min={0} max={100} value={Math.round(pos.y)}
+              onChange={e => setPos(p => ({ ...p, y: parseInt(e.target.value) }))}
+              className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
+            />
+            <span className="text-xs font-mono text-[#555] w-8 text-right">{Math.round(pos.y)}%</span>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:bg-[#F5F5F5] transition-colors">
+            Cancelar
+          </button>
+          <button
+            onClick={() => { onConfirm(`${Math.round(pos.x)}% ${Math.round(pos.y)}%`); onClose(); }}
+            className="flex-1 py-2.5 bg-[#0B76A0] rounded-xl text-sm text-white font-medium hover:bg-[#095f7d] transition-colors"
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FontPickerButton({ value, placeholder, onClick }: { value: string; placeholder?: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex-1 flex items-center justify-between px-3 py-2.5 border-2 border-[#D9D9D9] rounded-xl hover:border-[#0B76A0] transition-colors text-left min-w-0"
+    >
+      <span className="text-sm text-[#111] truncate" style={{ fontFamily: `'${value}', sans-serif` }}>
+        {value || placeholder}
+      </span>
+      <svg className="w-4 h-4 text-[#888] shrink-0 ml-2" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  );
+}
+
+type FontTarget = 'title_font' | 'subtitle_font' | 'button_font';
+
+const FONT_TARGET_LABELS: Record<FontTarget, string> = {
+  title_font: 'Fonte do título',
+  subtitle_font: 'Fonte do subtítulo',
+  button_font: 'Fonte dos botões',
+};
+
 function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [fontModalTarget, setFontModalTarget] = useState<FontTarget | null>(null);
+  const [uploadingBg, setUploadingBg] = useState(false);
+  const [bgPositionModal, setBgPositionModal] = useState(false);
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     FONT_OPTIONS.forEach(opt => loadGoogleFont(opt.value));
@@ -370,11 +543,20 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
     setSaving(true);
     await supabase.from('profiles').update({
       bg_color: profile.bg_color,
+      bg_image_url: profile.bg_image_url ?? null,
+      bg_position: profile.bg_position ?? null,
       text_color: profile.text_color,
       button_color: profile.button_color,
       button_text_color: profile.button_text_color,
       button_style: profile.button_style,
+      button_border_width: profile.button_border_width ?? '0',
+      button_border_color: profile.button_border_color ?? null,
       font_family: profile.font_family,
+      title_color: profile.title_color ?? null,
+      title_font: profile.title_font ?? null,
+      subtitle_color: profile.subtitle_color ?? null,
+      subtitle_font: profile.subtitle_font ?? null,
+      button_font: profile.button_font ?? null,
     }).eq('id', profile.id);
     setSaving(false);
     setSaved(true);
@@ -389,112 +571,338 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
     update('button_color', hexAlphaToRgba(hex, alpha));
   }
 
+  async function handleBgUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (bgFileInputRef.current) bgFileInputRef.current.value = '';
+    setUploadingBg(true);
+    try {
+      const blob = await compressImage(file);
+      const path = `${profile.id}/bg.webp`;
+      const { error } = await supabase.storage
+        .from('backgrounds')
+        .upload(path, blob, { upsert: true, contentType: 'image/webp' });
+      if (error) throw error;
+      const { data } = supabase.storage.from('backgrounds').getPublicUrl(path);
+      const url = `${data.publicUrl}?t=${Date.now()}`;
+      onProfileChange({ ...profile, bg_image_url: url, bg_position: '50% 50%' });
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setUploadingBg(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
-        <h3 className="text-sm font-semibold text-[#333333]">Cores</h3>
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: 'Fundo da página', key: 'bg_color' },
-            { label: 'Cor do texto', key: 'text_color' },
-            { label: 'Texto dos botões', key: 'button_text_color' },
-          ].map(({ label, key }) => (
-            <label key={key} className="flex flex-col gap-2 cursor-pointer">
-              <span className="text-xs font-medium text-[#555555]">{label}</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={(profile as any)[key]?.startsWith('#') ? (profile as any)[key] : '#ffffff'}
-                  onChange={e => update(key as keyof Profile, e.target.value)}
-                  className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
-                />
-                <input
-                  type="text"
-                  value={(profile as any)[key] ?? ''}
-                  onChange={e => update(key as keyof Profile, e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
-                />
-              </div>
-            </label>
-          ))}
 
-          {/* Cor dos botões */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-medium text-[#555555]">Fundo dos botões</span>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={btnHex}
-                onChange={e => updateButtonColor(e.target.value, btnAlpha)}
-                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+      {/* Fundo */}
+      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold text-[#333333]">Fundo</h3>
+        <label className="flex flex-col gap-2 cursor-pointer">
+          <span className="text-xs font-medium text-[#555555]">Cor de fundo</span>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={profile.bg_color?.startsWith('#') ? profile.bg_color : '#ffffff'}
+              onChange={e => update('bg_color', e.target.value)}
+              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+            />
+            <input
+              type="text"
+              value={profile.bg_color ?? ''}
+              onChange={e => update('bg_color', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
+            />
+          </div>
+        </label>
+
+        {/* Foto de fundo — PRO */}
+        {profile.plan === 'pro' ? (
+          <div className="space-y-2">
+            <span className="text-xs font-medium text-[#555555]">Foto de fundo</span>
+            {profile.bg_image_url && (
+              <div className="relative w-full h-24 rounded-xl overflow-hidden border border-[#D9D9D9]">
+                <img
+                  src={profile.bg_image_url}
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: profile.bg_position ?? '50% 50%' }}
+                />
+                <button
+                  onClick={() => onProfileChange({ ...profile, bg_image_url: '', bg_position: undefined })}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center text-white text-xs hover:bg-black/80"
+                >✕</button>
+              </div>
+            )}
+            <input ref={bgFileInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
+            <div className="flex gap-2">
+              <button
+                onClick={() => bgFileInputRef.current?.click()}
+                disabled={uploadingBg}
+                className="flex-1 py-2 px-4 border-2 border-dashed border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:border-[#0B76A0] hover:text-[#0B76A0] transition-colors disabled:opacity-50"
+              >
+                {uploadingBg ? 'Comprimindo…' : profile.bg_image_url ? 'Trocar foto' : 'Carregar foto de fundo'}
+              </button>
+              {profile.bg_image_url && (
+                <button
+                  onClick={() => setBgPositionModal(true)}
+                  className="py-2 px-3 border-2 border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:border-[#0B76A0] hover:text-[#0B76A0] transition-colors"
+                >
+                  Reposicionar
+                </button>
+              )}
+            </div>
+
+            {bgPositionModal && profile.bg_image_url && (
+              <BgPositionModal
+                imageUrl={profile.bg_image_url}
+                initialPosition={profile.bg_position ?? '50% 50%'}
+                onConfirm={pos => onProfileChange({ ...profile, bg_position: pos })}
+                onClose={() => setBgPositionModal(false)}
               />
-              <input
-                type="text"
-                value={btnHex}
-                onChange={e => {
-                  const v = e.target.value;
-                  if (/^#[0-9a-fA-F]{6}$/.test(v)) updateButtonColor(v, btnAlpha);
-                }}
-                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
-              />
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
+            <span className="text-amber-500 text-lg">🔒</span>
+            <div>
+              <p className="text-xs font-semibold text-amber-700">Foto de fundo — PRO</p>
+              <p className="text-xs text-amber-600">Faça upgrade para usar uma imagem de fundo personalizada.</p>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Opacidade — ocupa as 2 colunas */}
-          <div className="col-span-2 flex items-center gap-3">
-            <span className="text-xs font-medium text-[#555555] shrink-0">Opacidade dos botões</span>
+      {/* Botões */}
+      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold text-[#333333]">Botões</h3>
+
+        {/* Formato */}
+        <div className="space-y-2">
+          <span className="text-xs font-medium text-[#555]">Formato</span>
+          <div className="grid grid-cols-3 gap-2">
+            {BUTTON_STYLE_OPTIONS.map(opt => {
+              const selected = profile.button_style === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => update('button_style', opt.value)}
+                  className={`flex flex-col items-center gap-1.5 py-3 px-2 border-2 rounded-xl transition-colors ${
+                    selected ? 'border-[#0B76A0] bg-[#e8f4f8]' : 'border-[#E8E8E8] hover:border-[#BFBFBF]'
+                  }`}
+                >
+                  {/* Mini botão visual */}
+                  <div
+                    className="w-full h-5"
+                    style={{
+                      backgroundColor: selected ? '#0B76A0' : '#CBD5E1',
+                      borderRadius: opt.radius,
+                    }}
+                  />
+                  <span className={`text-[10px] leading-tight ${selected ? 'text-[#095f7d] font-semibold' : 'text-[#666]'}`}>
+                    {opt.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Fundo dos botões */}
+        <div className="space-y-2">
+          <span className="text-xs font-medium text-[#555]">Fundo</span>
+          <div className="flex items-center gap-2">
             <input
-              type="range"
-              min={0} max={100}
+              type="color"
+              value={btnHex}
+              onChange={e => updateButtonColor(e.target.value, btnAlpha)}
+              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+            />
+            <input
+              type="text"
+              value={btnHex}
+              onChange={e => { if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) updateButtonColor(e.target.value, btnAlpha); }}
+              className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#555] shrink-0">Opacidade</span>
+            <input
+              type="range" min={0} max={100}
               value={Math.round(btnAlpha * 100)}
               onChange={e => updateButtonColor(btnHex, parseInt(e.target.value) / 100)}
               className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
             />
-            <span className="text-xs font-mono text-[#555555] w-8 text-right shrink-0">
-              {Math.round(btnAlpha * 100)}%
+            <span className="text-xs font-mono text-[#555] w-8 text-right shrink-0">{Math.round(btnAlpha * 100)}%</span>
+          </div>
+        </div>
+
+        {/* Cor do texto dos botões */}
+        <div className="space-y-2">
+          <span className="text-xs font-medium text-[#555]">Cor do texto</span>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={profile.button_text_color?.startsWith('#') ? profile.button_text_color : '#ffffff'}
+              onChange={e => update('button_text_color', e.target.value)}
+              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+            />
+            <input
+              type="text"
+              value={profile.button_text_color ?? ''}
+              onChange={e => update('button_text_color', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
+            />
+          </div>
+        </div>
+
+        {/* Borda */}
+        <div className="space-y-2">
+          <span className="text-xs font-medium text-[#555]">Borda</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#555] shrink-0">Espessura</span>
+            <input
+              type="range" min={0} max={4}
+              value={parseInt(profile.button_border_width ?? '0')}
+              onChange={e => update('button_border_width', e.target.value)}
+              className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
+            />
+            <span className="text-xs font-mono text-[#555] w-8 text-right shrink-0">
+              {profile.button_border_width ?? '0'}px
             </span>
+          </div>
+          {parseInt(profile.button_border_width ?? '0') > 0 && (
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={profile.button_border_color?.startsWith('#') ? profile.button_border_color : profile.button_text_color?.startsWith('#') ? profile.button_text_color : '#000000'}
+                onChange={e => update('button_border_color', e.target.value)}
+                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+              />
+              <input
+                type="text"
+                value={profile.button_border_color ?? ''}
+                onChange={e => update('button_border_color', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
+                placeholder="Cor da borda"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Fonte dos botões */}
+        <div className="space-y-2">
+          <span className="text-xs font-medium text-[#555]">Fonte</span>
+          <div className="flex items-center gap-2">
+            <FontPickerButton
+              value={profile.button_font || profile.font_family}
+              onClick={() => setFontModalTarget('button_font')}
+            />
+            {profile.button_font && (
+              <button onClick={() => update('button_font', '')} className="text-xs text-[#999] hover:text-red-400 shrink-0">✕</button>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-3">
-        <h3 className="text-sm font-semibold text-[#333333]">Estilo dos botões</h3>
-        <div className="grid grid-cols-2 gap-2">
-          {BUTTON_STYLE_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => update('button_style', opt.value)}
-              className={`py-2 px-3 text-sm border-2 transition-colors ${opt.class} ${
-                profile.button_style === opt.value
-                  ? 'border-[#0B76A0] bg-[#e8f4f8] text-[#095f7d] font-medium'
-                  : 'border-[#D9D9D9] text-[#555555] hover:border-[#BFBFBF]'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+      {/* Tipografia */}
+      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold text-[#333333]">Tipografia</h3>
+
+        {/* Título */}
+        <div className="space-y-2">
+          <span className="text-xs font-medium text-[#555]">Título</span>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={profile.title_color?.startsWith('#') ? profile.title_color : (profile.text_color?.startsWith('#') ? profile.text_color : '#000000')}
+              onChange={e => update('title_color', e.target.value)}
+              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+            />
+            <FontPickerButton
+              value={profile.title_font || profile.font_family}
+              onClick={() => setFontModalTarget('title_font')}
+            />
+            {profile.title_font && (
+              <button onClick={() => update('title_font', '')} className="text-xs text-[#999] hover:text-red-400 shrink-0">✕</button>
+            )}
+          </div>
+        </div>
+
+        {/* Subtítulo */}
+        <div className="space-y-2">
+          <span className="text-xs font-medium text-[#555]">Subtítulo / Bio</span>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={profile.subtitle_color?.startsWith('#') ? profile.subtitle_color : (profile.text_color?.startsWith('#') ? profile.text_color : '#000000')}
+              onChange={e => update('subtitle_color', e.target.value)}
+              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+            />
+            <FontPickerButton
+              value={profile.subtitle_font || profile.font_family}
+              onClick={() => setFontModalTarget('subtitle_font')}
+            />
+            {profile.subtitle_font && (
+              <button onClick={() => update('subtitle_font', '')} className="text-xs text-[#999] hover:text-red-400 shrink-0">✕</button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-3">
-        <h3 className="text-sm font-semibold text-[#333333]">Fonte</h3>
-        <div className="grid grid-cols-2 gap-2">
-          {FONT_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => { update('font_family', opt.value); loadGoogleFont(opt.value); }}
-              className={`py-2 px-3 text-sm border-2 rounded-lg transition-colors ${
-                profile.font_family === opt.value
-                  ? 'border-[#0B76A0] bg-[#e8f4f8] text-[#095f7d] font-medium'
-                  : 'border-[#D9D9D9] text-[#555555] hover:border-[#BFBFBF]'
-              }`}
-              style={{ fontFamily: `'${opt.value}', sans-serif` }}
-            >
-              {opt.label}
-            </button>
-          ))}
+      {/* Font picker modal */}
+      {fontModalTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setFontModalTarget(null)}
+        >
+          <div
+            className="bg-white w-full sm:w-[420px] rounded-t-3xl sm:rounded-2xl shadow-2xl p-5 max-h-[70vh] flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-[#111]">{FONT_TARGET_LABELS[fontModalTarget]}</h3>
+              <button
+                onClick={() => setFontModalTarget(null)}
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-[#F0F0F0] hover:bg-[#E0E0E0] transition-colors text-[#555]"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto grid grid-cols-2 gap-2 pr-1">
+              {FONT_OPTIONS.map(opt => {
+                const current = (profile[fontModalTarget] as string) || profile.font_family;
+                const selected = current === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      update(fontModalTarget, opt.value);
+                      loadGoogleFont(opt.value);
+                      setFontModalTarget(null);
+                    }}
+                    className={`flex flex-col items-start px-4 py-3 rounded-xl border-2 transition-colors text-left ${
+                      selected ? 'border-[#0B76A0] bg-[#e8f4f8]' : 'border-[#E8E8E8] hover:border-[#BFBFBF]'
+                    }`}
+                  >
+                    <span
+                      className="text-xl leading-none mb-1"
+                      style={{ fontFamily: `'${opt.value}', sans-serif`, color: selected ? '#095f7d' : '#111' }}
+                    >
+                      Aa
+                    </span>
+                    <span className={`text-xs ${selected ? 'text-[#095f7d] font-medium' : 'text-[#666]'}`}>
+                      {opt.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       <button
         onClick={handleSave}
@@ -573,92 +981,102 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {THEMES.map(theme => {
-          const selected = profile.theme_id === theme.id;
-          const isPro = isThemePro(themeConfigs, theme.id);
-          const locked = isPro && !canUseTheme(isPro, profile.plan ?? 'free');
-          const d = theme.defaults;
-          return (
-            <button
-              key={theme.id}
-              onClick={() => handleSelect(theme.id)}
-              title={theme.description}
-              className={`relative rounded-2xl overflow-hidden transition-all duration-200 focus:outline-none shadow-sm ${
-                locked ? 'opacity-75' :
-                selected
-                  ? 'ring-2 ring-[#0B76A0] ring-offset-2 scale-[1.03] shadow-md'
-                  : 'hover:scale-[1.03] hover:shadow-md'
-              }`}
-            >
-              {/* Card background */}
-              <div
-                className="w-full flex flex-col items-center justify-center gap-1.5 px-2 pt-5 pb-8"
-                style={theme.previewStyle as React.CSSProperties}
-              >
-                {/* Fake avatar */}
-                <div
-                  className="w-7 h-7 rounded-full"
-                  style={{ backgroundColor: d.text_color, opacity: 0.28 }}
-                />
-                {/* Fake name line */}
-                <div
-                  className="h-1.5 rounded-full"
-                  style={{ width: '55%', backgroundColor: d.text_color, opacity: 0.22 }}
-                />
-                {/* Fake bio line */}
-                <div
-                  className="h-1 rounded-full"
-                  style={{ width: '38%', backgroundColor: d.text_color, opacity: 0.14 }}
-                />
-                {/* Fake button */}
-                <div
-                  className="h-4 mt-0.5"
-                  style={{
-                    width: '72%',
-                    backgroundColor: d.button_style === 'outline' ? 'transparent' : d.button_color,
-                    border: d.button_style === 'outline' ? `1.5px solid ${d.button_text_color}` : undefined,
-                    borderRadius: d.button_style === 'pill' ? '9999px'
-                      : d.button_style === 'square' ? '2px'
-                      : '6px',
-                  }}
-                />
-              </div>
+      {(['static', 'animated'] as const).map(group => {
+        const groupThemes = THEMES.filter(t => (t.group ?? (t.Background ? 'animated' : 'static')) === group);
+        if (groupThemes.length === 0) return null;
+        return (
+          <div key={group} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-[#BFBFBF]">
+                {group === 'static' ? 'Estáticos' : 'Animados'}
+              </span>
+              <div className="flex-1 h-px bg-[#E8E8E8]" />
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-3 gap-y-4">
+              {groupThemes.map(theme => {
+                const selected = profile.theme_id === theme.id;
+                const isPro = isThemePro(themeConfigs, theme.id);
+                const locked = isPro && !canUseTheme(isPro, profile.plan ?? 'free');
+                const d = theme.defaults;
+                const btnRadius = getButtonRadius(d.button_style);
+                return (
+                  <div key={theme.id} className="flex flex-col items-center gap-1.5">
+                    <button
+                      onClick={() => handleSelect(theme.id)}
+                      title={theme.description}
+                      className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 focus:outline-none ${
+                        locked ? 'opacity-60' :
+                        selected
+                          ? 'ring-2 ring-[#0B76A0] ring-offset-2 shadow-lg scale-[1.04]'
+                          : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-black/10'
+                      }`}
+                      style={{ aspectRatio: '3/4' }}
+                    >
+                      {/* Card body */}
+                      <div
+                        className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
+                        style={theme.previewStyle as React.CSSProperties}
+                      >
+                        {/* "Aa" typography sample */}
+                        <span
+                          className="font-bold leading-none select-none"
+                          style={{
+                            fontSize: 'clamp(22px, 6vw, 30px)',
+                            color: d.text_color,
+                            fontFamily: `'${d.font_family}', sans-serif`,
+                          }}
+                        >
+                          Aa
+                        </span>
 
-              {/* Name label */}
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent pt-5 pb-2 px-1.5">
-                <p
-                  className="text-[11px] font-semibold text-white text-center leading-tight truncate"
-                  style={{ fontFamily: `'${d.font_family}', sans-serif` }}
-                >
-                  {theme.name}
-                </p>
-              </div>
+                        {/* Mini button */}
+                        <div
+                          className="w-4/5"
+                          style={{
+                            height: '18px',
+                            backgroundColor: d.button_color,
+                            borderRadius: btnRadius,
+                          }}
+                        />
+                      </div>
 
-              {/* PRO badge */}
-              {isPro && (
-                <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-400 text-[8px] font-black text-black leading-tight shadow">
-                  PRO
-                </div>
-              )}
+                      {/* PRO badge */}
+                      {isPro && (
+                        <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-400 text-[8px] font-black text-black leading-tight shadow">
+                          PRO
+                        </div>
+                      )}
 
-              {/* Lock overlay for locked themes */}
-              {locked && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  <span className="text-xl">🔒</span>
-                </div>
-              )}
+                      {/* Lock overlay */}
+                      {locked && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/25 rounded-2xl">
+                          <span className="text-lg">🔒</span>
+                        </div>
+                      )}
 
-              {/* Selected badge */}
-              {selected && !locked && (
-                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
-                  <Check className="w-2.5 h-2.5 text-white" />
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
+                      {/* Selected checkmark */}
+                      {selected && !locked && (
+                        <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Theme name below card */}
+                    <p
+                      className={`text-[11px] text-center leading-tight truncate w-full ${
+                        selected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'
+                      }`}
+                    >
+                      {theme.name}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -903,18 +1321,20 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
               className="w-24 h-24 rounded-full object-cover border-2 border-[#D9D9D9] shadow-sm"
               referrerPolicy="no-referrer"
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/40 opacity-0 hover:opacity-100 transition-opacity text-white disabled:cursor-not-allowed"
-            >
-              {uploading
-                ? <Loader2 className="w-5 h-5 animate-spin" />
-                : <Camera className="w-5 h-5" />
-              }
-              {!uploading && <span className="text-[10px] font-medium mt-0.5">Trocar</span>}
-            </button>
+            {profile.plan === 'pro' && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/40 opacity-0 hover:opacity-100 transition-opacity text-white disabled:cursor-not-allowed"
+              >
+                {uploading
+                  ? <Loader2 className="w-5 h-5 animate-spin" />
+                  : <Camera className="w-5 h-5" />
+                }
+                {!uploading && <span className="text-[10px] font-medium mt-0.5">Trocar</span>}
+              </button>
+            )}
           </div>
           <input
             ref={fileInputRef}
@@ -923,18 +1343,30 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
             className="hidden"
             onChange={handleAvatarChange}
           />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="text-xs text-[#0B76A0] hover:underline disabled:opacity-50"
-          >
-            {uploading ? 'Enviando…' : 'Alterar foto de perfil'}
-          </button>
-          {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
-          <p className="text-[11px] text-[#BFBFBF] text-center">
-            JPG, PNG ou WebP · Recorte circular 400×400 px
-          </p>
+          {profile.plan === 'pro' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="text-xs text-[#0B76A0] hover:underline disabled:opacity-50"
+              >
+                {uploading ? 'Enviando…' : 'Alterar foto de perfil'}
+              </button>
+              {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+              <p className="text-[11px] text-[#BFBFBF] text-center">
+                JPG, PNG ou WebP · Recorte circular 400×400 px
+              </p>
+            </>
+          ) : (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200 w-full">
+              <span className="text-amber-500 text-lg">🔒</span>
+              <div>
+                <p className="text-xs font-semibold text-amber-700">Foto de perfil — PRO</p>
+                <p className="text-xs text-amber-600">Faça upgrade para usar uma foto personalizada.</p>
+              </div>
+            </div>
+          )}
         </div>
 
         <label className="flex flex-col gap-1.5">
