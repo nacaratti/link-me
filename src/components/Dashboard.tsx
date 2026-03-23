@@ -14,15 +14,26 @@ import ThemeBackground from '../themes/ThemeBackground';
 import logo from '../assets/images/logo.png';
 import { linkLimitReached, linkBlockMessage, canUseTheme, themeBlockMessage } from '../lib/plans';
 import { fetchThemeConfigs, isThemePro, invalidateThemeConfigCache, type ThemeConfig } from '../lib/themeConfig';
+import { fetchCustomThemes, type CustomTheme } from '../lib/customThemes';
 
 type Tab = 'links' | 'theme' | 'appearance' | 'profile' | 'preview';
 
 // ─── Mobile Full Preview (tab preview no celular) ────────────────────────────
 
 function MobileFullPreview({ profile }: { profile: Profile }) {
+  const [customTheme, setCustomTheme] = useState<CustomTheme | null>(null);
+
   useEffect(() => {
     if (profile.font_family) loadGoogleFont(profile.font_family);
   }, [profile.font_family]);
+
+  useEffect(() => {
+    if (profile.theme_id?.startsWith('custom_')) {
+      fetchCustomThemes().then(list => setCustomTheme(list.find(t => t.id === profile.theme_id) ?? null));
+    } else {
+      setCustomTheme(null);
+    }
+  }, [profile.theme_id]);
 
   const theme = getTheme(profile.theme_id ?? 'default');
   const btnRadius = getButtonRadius(profile.button_style);
@@ -36,7 +47,12 @@ function MobileFullPreview({ profile }: { profile: Profile }) {
       className="relative min-h-full"
       style={{ backgroundColor: profile.bg_color, fontFamily: `'${profile.font_family}', sans-serif` }}
     >
-      <ThemeBackground Background={theme.Background} themeId={profile.theme_id ?? 'default'} />
+      <ThemeBackground
+        Background={customTheme ? undefined : theme.Background}
+        mediaUrl={customTheme?.media_url}
+        mediaType={customTheme?.media_type}
+        themeId={profile.theme_id ?? 'default'}
+      />
       <div className="relative z-10 flex flex-col items-center py-14 px-5 pb-24">
         <img
           src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`}
@@ -85,9 +101,19 @@ function MobileFullPreview({ profile }: { profile: Profile }) {
 // ─── Mobile Preview (painel desktop) ─────────────────────────────────────────
 
 function MobilePreview({ profile }: { profile: Profile }) {
+  const [customTheme, setCustomTheme] = useState<CustomTheme | null>(null);
+
   useEffect(() => {
     if (profile.font_family) loadGoogleFont(profile.font_family);
   }, [profile.font_family]);
+
+  useEffect(() => {
+    if (profile.theme_id?.startsWith('custom_')) {
+      fetchCustomThemes().then(list => setCustomTheme(list.find(t => t.id === profile.theme_id) ?? null));
+    } else {
+      setCustomTheme(null);
+    }
+  }, [profile.theme_id]);
 
   const theme = getTheme(profile.theme_id ?? 'default');
   const btnRadius = getButtonRadius(profile.button_style);
@@ -107,7 +133,12 @@ function MobilePreview({ profile }: { profile: Profile }) {
         fontFamily: `'${profile.font_family}', sans-serif`,
       }}
     >
-      <ThemeBackground Background={theme.Background} themeId={profile.theme_id ?? 'default'} />
+      <ThemeBackground
+        Background={customTheme ? undefined : theme.Background}
+        mediaUrl={customTheme?.media_url}
+        mediaType={customTheme?.media_type}
+        themeId={profile.theme_id ?? 'default'}
+      />
       <div className="relative h-full overflow-y-auto" style={{ zIndex: 1 }}>
         <div className="flex flex-col items-center py-10 px-4">
           <img
@@ -922,28 +953,40 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [themeConfigs, setThemeConfigs] = useState<Record<string, ThemeConfig>>({});
-  const [blocked, setBlocked] = useState<string | null>(null); // themeId que mostrou upsell
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
+  const [blocked, setBlocked] = useState<string | null>(null);
 
   useEffect(() => {
     const unique = [...new Set(THEMES.map(t => t.defaults.font_family))];
     unique.forEach(loadGoogleFont);
     fetchThemeConfigs().then(setThemeConfigs);
+    fetchCustomThemes().then(setCustomThemes);
   }, []);
 
   async function handleSelect(themeId: string) {
     const theme = THEMES.find(t => t.id === themeId);
-    if (!theme) return;
-    const isPro = isThemePro(themeConfigs, themeId);
+    const customTheme = customThemes.find(t => t.id === themeId);
+    if (!theme && !customTheme) return;
+
+    const isPro = theme ? isThemePro(themeConfigs, themeId) : (customTheme?.is_pro ?? false);
     if (!canUseTheme(isPro, profile.plan ?? 'free')) {
       setBlocked(themeId);
       return;
     }
     setBlocked(null);
-    const updated: Profile = {
-      ...profile,
-      theme_id: themeId,
-      ...(theme.defaults ?? {}),
-    };
+
+    const defaults = theme
+      ? theme.defaults
+      : {
+          bg_color: customTheme!.preview_color,
+          text_color: customTheme!.text_color,
+          button_color: customTheme!.button_color,
+          button_text_color: customTheme!.button_text_color,
+          button_style: customTheme!.button_style,
+          font_family: customTheme!.font_family,
+        };
+
+    const updated: Profile = { ...profile, theme_id: themeId, ...defaults };
     onProfileChange(updated);
     setSaving(true);
     await supabase.from('profiles').update({
@@ -1077,6 +1120,60 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           </div>
         );
       })}
+
+      {/* ── Temas personalizados ── */}
+      {customThemes.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#BFBFBF]">Personalizados</span>
+            <div className="flex-1 h-px bg-[#E8E8E8]" />
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-3 gap-y-4">
+            {customThemes.map(theme => {
+              const selected = profile.theme_id === theme.id;
+              const locked = theme.is_pro && !canUseTheme(theme.is_pro, profile.plan ?? 'free');
+              return (
+                <div key={theme.id} className="flex flex-col items-center gap-1.5">
+                  <button
+                    onClick={() => handleSelect(theme.id)}
+                    title={theme.description}
+                    className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 focus:outline-none ${
+                      locked ? 'opacity-60' :
+                      selected
+                        ? 'ring-2 ring-[#0B76A0] ring-offset-2 shadow-lg scale-[1.04]'
+                        : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-black/10'
+                    }`}
+                    style={{ aspectRatio: '3/4' }}
+                  >
+                    {theme.media_type === 'video'
+                      ? <video src={theme.media_url} muted autoPlay loop playsInline className="absolute inset-0 w-full h-full object-cover" />
+                      : <img src={theme.media_url} className="absolute inset-0 w-full h-full object-cover" />
+                    }
+                    {theme.is_pro && (
+                      <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-400 text-[8px] font-black text-black leading-tight shadow">
+                        PRO
+                      </div>
+                    )}
+                    {locked && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/25 rounded-2xl">
+                        <span className="text-lg">🔒</span>
+                      </div>
+                    )}
+                    {selected && !locked && (
+                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </button>
+                  <p className={`text-[11px] text-center leading-tight truncate w-full ${selected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'}`}>
+                    {theme.name}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1249,13 +1346,36 @@ function CropModal({ file, onConfirm, onCancel }: {
 
 // ─── Profile Tab ──────────────────────────────────────────────────────────────
 
+const INITIAL_AVATAR_SEEDS = [
+  'Felix','Luna','Milo','Zoe','Leo','Aria',
+  'Kai','Nova','Axel','Iris','Max','Nora',
+  'Rex','Vera','Finn','Maya',
+];
+
+function dicebearUrl(seed: string) {
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
+}
+
+function randomSeeds(count: number): string[] {
+  return Array.from({ length: count }, () =>
+    Math.random().toString(36).slice(2, 10)
+  );
+}
+
 function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
   const [saving, setSaving]         = useState(false);
   const [saved, setSaved]           = useState(false);
   const [uploading, setUploading]   = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [cropFile, setCropFile]     = useState<File | null>(null);
+  const [avatarSeeds, setAvatarSeeds] = useState<string[]>(INITIAL_AVATAR_SEEDS);
   const fileInputRef                = useRef<HTMLInputElement>(null);
+
+  async function handleSelectPreset(seed: string) {
+    const url = dicebearUrl(seed);
+    await supabase.from('profiles').update({ avatar_url: url }).eq('id', profile.id);
+    onProfileChange({ ...profile, avatar_url: url });
+  }
 
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -1369,6 +1489,49 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
           )}
         </div>
 
+        {/* Preset avatar picker — available to all plans */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-[#555555]">Escolher avatar</span>
+            <button
+              type="button"
+              onClick={() => setAvatarSeeds(randomSeeds(16))}
+              className="flex items-center gap-1 text-xs text-[#0B76A0] hover:underline"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Gerar novos
+            </button>
+          </div>
+          <div className="grid grid-cols-8 gap-2">
+            {avatarSeeds.map(seed => {
+              const url = dicebearUrl(seed);
+              const selected = profile.avatar_url === url;
+              return (
+                <button
+                  key={seed}
+                  type="button"
+                  title={seed}
+                  onClick={() => handleSelectPreset(seed)}
+                  className={`rounded-full overflow-hidden transition-all focus:outline-none ${
+                    selected
+                      ? 'ring-2 ring-[#0B76A0] ring-offset-2 scale-110'
+                      : 'ring-1 ring-black/10 hover:scale-110 hover:ring-[#0B76A0]/50'
+                  }`}
+                >
+                  <img
+                    src={url}
+                    alt={seed}
+                    className="w-full h-full object-cover bg-[#f0f4f8]"
+                    draggable={false}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-[#555555]">Nome de exibição</span>
           <input
@@ -1378,10 +1541,16 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-[#555555]">Bio</span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-[#555555]">Bio</span>
+            <span className={`text-[11px] tabular-nums ${(profile.bio?.length ?? 0) >= 80 ? 'text-red-400 font-semibold' : 'text-[#BFBFBF]'}`}>
+              {profile.bio?.length ?? 0}/80
+            </span>
+          </div>
           <textarea
             className="px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] resize-none"
-            rows={3}
+            rows={2}
+            maxLength={80}
             value={profile.bio ?? ''}
             onChange={e => update('bio', e.target.value)}
           />

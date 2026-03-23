@@ -16,10 +16,41 @@ class ErrorBoundary extends Component<
 
 interface Props {
   Background?: ComponentType;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
   themeId: string;
 }
 
-export default function ThemeBackground({ Background, themeId }: Props) {
+export default function ThemeBackground({ Background, mediaUrl, mediaType, themeId }: Props) {
+  if (mediaUrl) {
+    if (mediaType === 'video') {
+      return (
+        <video
+          key={themeId}
+          src={mediaUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          style={{ zIndex: 0 }}
+        />
+      );
+    }
+    return (
+      <div
+        key={themeId}
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url(${mediaUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          zIndex: 0,
+        }}
+      />
+    );
+  }
+
   if (!Background) return null;
   return (
     <ErrorBoundary key={themeId}>

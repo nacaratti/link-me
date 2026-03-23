@@ -6,12 +6,14 @@ import { loadGoogleFont } from '../lib/fonts';
 import { getTheme } from '../themes';
 import { ICON_MAP, getButtonRadius } from '../types';
 import ThemeBackground from '../themes/ThemeBackground';
+import { fetchCustomThemes, type CustomTheme } from '../lib/customThemes';
 import { ExternalLink, AlertCircle } from 'lucide-react';
 import type { Profile } from '../types';
 
 export default function PublicProfile() {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [customTheme, setCustomTheme] = useState<CustomTheme | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +40,12 @@ export default function PublicProfile() {
         if (data.title_font) loadGoogleFont(data.title_font);
         if (data.subtitle_font) loadGoogleFont(data.subtitle_font);
         if (data.button_font) loadGoogleFont(data.button_font);
+        // Carregar tema custom se aplicável
+        if (data.theme_id?.startsWith('custom_')) {
+          const customs = await fetchCustomThemes();
+          const ct = customs.find(t => t.id === data.theme_id) ?? null;
+          setCustomTheme(ct);
+        }
       }
       setLoading(false);
     }
@@ -127,7 +135,12 @@ export default function PublicProfile() {
       )}
 
       {/* Theme background layer */}
-      <ThemeBackground Background={theme.Background} themeId={profile.theme_id} />
+      <ThemeBackground
+        Background={customTheme ? undefined : theme.Background}
+        mediaUrl={customTheme?.media_url}
+        mediaType={customTheme?.media_type}
+        themeId={profile.theme_id}
+      />
 
       {/* Content layer */}
       <motion.div
@@ -154,7 +167,7 @@ export default function PublicProfile() {
           </h1>
           {profile.bio && (
             <p
-              className="text-sm max-w-[300px] opacity-75"
+              className="text-sm max-w-[300px] opacity-75 line-clamp-2"
               style={{
                 color: profile.subtitle_color || profile.text_color,
                 fontFamily: profile.subtitle_font ? `'${profile.subtitle_font}', sans-serif` : undefined,
