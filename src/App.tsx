@@ -5,6 +5,7 @@ import PublicProfile from './components/PublicProfile';
 import Dashboard from './components/Dashboard';
 import AuthPage from './components/AuthPage';
 import AdminPanel from './components/AdminPanel';
+import UsernameSetup from './components/UsernameSetup';
 import { Loader2 } from 'lucide-react';
 
 function Spinner() {
@@ -16,17 +17,27 @@ function Spinner() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, hasUsername } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/entrar" replace />;
+  if (!hasUsername) return <Navigate to="/setup" replace />;
   return <>{children}</>;
 }
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, hasUsername } = useAuth();
   if (loading) return <Spinner />;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user && hasUsername) return <Navigate to="/dashboard" replace />;
+  if (user && !hasUsername) return <Navigate to="/setup" replace />;
   return <>{children}</>;
+}
+
+function SetupRoute() {
+  const { user, loading, hasUsername } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/entrar" replace />;
+  if (hasUsername) return <Navigate to="/dashboard" replace />;
+  return <UsernameSetup />;
 }
 
 function AppRoutes() {
@@ -35,6 +46,7 @@ function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       <Route path="/entrar" element={<GuestRoute><AuthPage /></GuestRoute>} />
+      <Route path="/setup" element={<SetupRoute />} />
       <Route path="/:username" element={<PublicProfile />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
