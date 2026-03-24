@@ -7,7 +7,7 @@ import logo from '../assets/images/logo.png';
 const RESERVED = new Set(['admin', 'help', 'settings', 'api', 'auth', 'dashboard', 'entrar', 'login', 'register']);
 
 export default function UsernameSetup() {
-  const { user } = useAuth();
+  const { user, refreshUsername } = useAuth();
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,8 +45,11 @@ export default function UsernameSetup() {
         } else {
           throw updateError;
         }
+        return;
       }
-      // App.tsx detecta username preenchido via AuthContext e redireciona
+
+      // Atualiza o estado do contexto — App.tsx redireciona para /dashboard
+      await refreshUsername();
     } catch (err: any) {
       setError(err?.message || 'Erro ao salvar. Tente novamente.');
     } finally {
