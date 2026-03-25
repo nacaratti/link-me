@@ -16,12 +16,19 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_username     text := (new.raw_user_meta_data->>'username');
   v_display_name text := COALESCE(
-    new.raw_user_meta_data->>'display_name',
-    new.raw_user_meta_data->>'full_name',
-    new.raw_user_meta_data->>'name',
-    split_part(new.email, '@', 1)
+    NULLIF(TRIM(new.raw_user_meta_data->>'display_name'), ''),
+    NULLIF(TRIM(new.raw_user_meta_data->>'full_name'), ''),
+    NULLIF(TRIM(new.raw_user_meta_data->>'name'), ''),
+    NULLIF(TRIM(split_part(COALESCE(new.email, ''), '@', 1)), ''),
+    ''
   );
-  v_avatar       text := new.raw_user_meta_data->>'avatar_url';
+  -- Google envia a foto em "picture"; avatar_url costuma ser vazio.
+  -- NUNCA passar NULL aqui: avatar_url é NOT NULL e DEFAULT não se aplica quando a coluna está no INSERT.
+  v_avatar       text := COALESCE(
+    NULLIF(TRIM(new.raw_user_meta_data->>'avatar_url'), ''),
+    NULLIF(TRIM(new.raw_user_meta_data->>'picture'), ''),
+    ''
+  );
 BEGIN
   INSERT INTO public.profiles (id, username, display_name, avatar_url)
   VALUES (new.id, v_username, v_display_name, v_avatar)

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
 import logo from '../assets/images/logo.png';
@@ -213,6 +214,13 @@ export default function AuthPage() {
             Continuar com Google
           </button>
         </div>
+
+        <p className="text-center text-xs text-[#BFBFBF] mt-6">
+          Ao continuar, você concorda com os nossos{' '}
+          <Link to="/termos" className="text-[#0B76A0] hover:underline">Termos de Serviço</Link>
+          {' '}e{' '}
+          <Link to="/privacidade" className="text-[#0B76A0] hover:underline">Política de Privacidade</Link>.
+        </p>
       </div>
     </div>
   );

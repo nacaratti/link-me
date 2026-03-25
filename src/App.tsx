@@ -6,6 +6,8 @@ import Dashboard from './components/Dashboard';
 import AuthPage from './components/AuthPage';
 import AdminPanel from './components/AdminPanel';
 import UsernameSetup from './components/UsernameSetup';
+import TermsOfService from './components/TermsOfService';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import { Loader2 } from 'lucide-react';
 
 function Spinner() {
@@ -47,6 +49,8 @@ function AppRoutes() {
       <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       <Route path="/entrar" element={<GuestRoute><AuthPage /></GuestRoute>} />
       <Route path="/setup" element={<SetupRoute />} />
+      <Route path="/termos" element={<TermsOfService />} />
+      <Route path="/privacidade" element={<PrivacyPolicy />} />
       <Route path="/:username" element={<PublicProfile />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
