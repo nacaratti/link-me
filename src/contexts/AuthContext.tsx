@@ -38,22 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession()
-      .then(({ data, error }) => {
-        // Refresh token inválido (sessão antiga no localStorage) — limpa e desloga
-        if (error) {
-          supabase.auth.signOut();
-          return;
-        }
-        const u = data.session?.user ?? null;
-        setUser(u);
-        if (u) return checkUsername(u.id);
-      })
-      .finally(() => setLoading(false));
-
+    // Não usar getSession() + onAuthStateChange em paralelo para OAuth PKCE:
+    // getSession() pode retornar null antes da troca do ?code= completar,
+    // causando redirect para /entrar antes do SIGNED_IN disparar.
+    // onAuthStateChange dispara INITIAL_SESSION *após* a troca do code,
+    // então é a única fonte de verdade para o estado inicial.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // TOKEN_REFRESHED com sessão nula = token inválido — limpa localStorage
-      if (!session && event === 'TOKEN_REFRESHED') {
+      // Refresh token inválido — limpa sessão corrompida no localStorage
+      if (event === 'TOKEN_REFRESHED' && !session) {
         supabase.auth.signOut();
         setUser(null);
         setHasUsername(false);
@@ -61,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // INITIAL_SESSION, SIGNED_IN, SIGNED_OUT, USER_UPDATED
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
