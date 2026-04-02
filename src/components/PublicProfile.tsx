@@ -9,6 +9,7 @@ import ThemeBackground from '../themes/ThemeBackground';
 import { fetchCustomThemes, type CustomTheme } from '../lib/customThemes';
 import { ExternalLink, AlertCircle } from 'lucide-react';
 import type { Profile } from '../types';
+import WhatsappFloatingButton from './WhatsappFloatingButton';
 
 export default function PublicProfile() {
   const { username } = useParams<{ username: string }>();
@@ -229,6 +230,16 @@ export default function PublicProfile() {
           </a>
         </div>
       </motion.div>
+
+      {profile.whatsapp_enabled && profile.whatsapp_number && (
+        <WhatsappFloatingButton
+          number={profile.whatsapp_number}
+          bgColor={profile.whatsapp_bg_color || '#25D366'}
+          iconColor={profile.whatsapp_icon_color || '#ffffff'}
+          size={profile.whatsapp_size || 'normal'}
+          animation={profile.whatsapp_animation || 'none'}
+        />
+      )}
     </div>
   );
 }

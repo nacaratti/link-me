@@ -12,9 +12,10 @@ import { ICON_MAP, FONT_OPTIONS, BUTTON_STYLE_OPTIONS, getButtonRadius, type Pro
 import { THEMES, getTheme } from '../themes';
 import ThemeBackground from '../themes/ThemeBackground';
 import logo from '../assets/images/logo.png';
-import { linkLimitReached, linkBlockMessage, canUseTheme, themeBlockMessage } from '../lib/plans';
+import { linkLimitReached, linkBlockMessage, canUseTheme } from '../lib/plans';
 import { fetchThemeConfigs, isThemePro, invalidateThemeConfigCache, type ThemeConfig } from '../lib/themeConfig';
 import { fetchCustomThemes, type CustomTheme } from '../lib/customThemes';
+import WhatsappFloatingButton from './WhatsappFloatingButton';
 
 type Tab = 'links' | 'theme' | 'appearance' | 'profile' | 'preview';
 
@@ -94,6 +95,15 @@ function MobileFullPreview({ profile }: { profile: Profile }) {
           )}
         </div>
       </div>
+      {profile.whatsapp_enabled && profile.whatsapp_number && (
+        <WhatsappFloatingButton
+          number={profile.whatsapp_number}
+          bgColor={profile.whatsapp_bg_color || '#25D366'}
+          iconColor={profile.whatsapp_icon_color || '#ffffff'}
+          size={profile.whatsapp_size || 'normal'}
+          animation={profile.whatsapp_animation || 'none'}
+        />
+      )}
     </div>
   );
 }
@@ -191,6 +201,16 @@ function MobilePreview({ profile }: { profile: Profile }) {
           </div>
         </div>
       </div>
+      {profile.whatsapp_enabled && profile.whatsapp_number && (
+        <WhatsappFloatingButton
+          number={profile.whatsapp_number}
+          bgColor={profile.whatsapp_bg_color || '#25D366'}
+          iconColor={profile.whatsapp_icon_color || '#ffffff'}
+          size={profile.whatsapp_size || 'normal'}
+          animation={profile.whatsapp_animation || 'none'}
+          preview
+        />
+      )}
     </div>
   );
 }
@@ -203,6 +223,9 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   const [newIcon, setNewIcon] = useState('link');
   const [adding, setAdding] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
+  const [waNumber, setWaNumber] = useState(profile.whatsapp_number ?? '');
+  const [waSaving, setWaSaving] = useState(false);
+  const [waSaved, setWaSaved] = useState(false);
 
   const blocked = linkLimitReached(profile.links.length, profile.plan ?? 'free');
 
@@ -254,6 +277,24 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
     if (results.some(r => r.error)) {
       onProfileChange({ ...profile, links: previousLinks });
     }
+  }
+
+  async function handleWaToggle() {
+    const newEnabled = !profile.whatsapp_enabled;
+    const { error } = await supabase.from('profiles').update({ whatsapp_enabled: newEnabled }).eq('id', profile.id);
+    if (!error) onProfileChange({ ...profile, whatsapp_enabled: newEnabled });
+  }
+
+  async function handleWaSave(e: React.FormEvent) {
+    e.preventDefault();
+    setWaSaving(true);
+    const { error } = await supabase.from('profiles').update({ whatsapp_number: waNumber }).eq('id', profile.id);
+    if (!error) {
+      onProfileChange({ ...profile, whatsapp_number: waNumber });
+      setWaSaved(true);
+      setTimeout(() => setWaSaved(false), 2000);
+    }
+    setWaSaving(false);
   }
 
   const addForm = (compact = false) => (
@@ -349,6 +390,71 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           <span>{linkBlockMessage(profile.plan ?? 'free')}</span>
         </div>
       )}
+
+      {/* WhatsApp flutuante */}
+      <div className={`bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4 ${(profile.plan ?? 'free') !== 'pro' ? 'opacity-70' : ''}`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-[#333333]">Botão flutuante do WhatsApp</h3>
+              {(profile.plan ?? 'free') !== 'pro' && (
+                <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-[8px] font-black text-black leading-tight">PRO</span>
+              )}
+            </div>
+            <p className="text-xs text-[#BFBFBF] mt-0.5">Aparece no canto inferior direito do seu perfil</p>
+          </div>
+          {(profile.plan ?? 'free') === 'pro' ? (
+            <button
+              type="button"
+              onClick={handleWaToggle}
+              style={{ touchAction: 'manipulation' }}
+              className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+                profile.whatsapp_enabled ? 'bg-[#25D366]' : 'bg-[#D9D9D9]'
+              }`}
+              aria-label="Ativar botão do WhatsApp"
+            >
+              <span
+                className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
+                  profile.whatsapp_enabled ? 'left-[22px]' : 'left-0.5'
+                }`}
+              />
+            </button>
+          ) : (
+            <span className="text-lg">🔒</span>
+          )}
+        </div>
+
+        {(profile.plan ?? 'free') !== 'pro' && (
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            Faça upgrade para o plano PRO para ativar o botão flutuante do WhatsApp.
+          </p>
+        )}
+
+        {(profile.plan ?? 'free') === 'pro' && profile.whatsapp_enabled && (
+          <form onSubmit={handleWaSave} className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-[#555555] block mb-1.5">Número do WhatsApp</label>
+              <input
+                type="tel"
+                placeholder="+55 11 99999-9999"
+                value={waNumber}
+                onChange={e => setWaNumber(e.target.value)}
+                className="w-full px-4 py-3 text-base border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+                required
+              />
+              <p className="text-[11px] text-[#BFBFBF] mt-1">Com código do país, ex: +5511999999999</p>
+            </div>
+            <button
+              type="submit"
+              disabled={waSaving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#25D366] text-white text-sm font-medium rounded-xl hover:bg-[#1da851] disabled:opacity-50 transition-colors"
+            >
+              {waSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : waSaved ? <Check className="w-4 h-4" /> : null}
+              {waSaved ? 'Salvo!' : 'Salvar número'}
+            </button>
+          </form>
+        )}
+      </div>
 
       {/* FAB — mobile only */}
       <button
@@ -588,6 +694,10 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
       subtitle_color: profile.subtitle_color ?? null,
       subtitle_font: profile.subtitle_font ?? null,
       button_font: profile.button_font ?? null,
+      whatsapp_bg_color: profile.whatsapp_bg_color ?? null,
+      whatsapp_icon_color: profile.whatsapp_icon_color ?? null,
+      whatsapp_size: profile.whatsapp_size ?? null,
+      whatsapp_animation: profile.whatsapp_animation ?? null,
     }).eq('id', profile.id);
     setSaving(false);
     setSaved(true);
@@ -935,6 +1045,120 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
         </div>
       )}
 
+      {/* WhatsApp — só aparece se o botão estiver ativado na aba Links */}
+      {profile.whatsapp_enabled && (
+        <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+          <div className="flex items-center gap-2">
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="#25D366" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+            </svg>
+            <h3 className="text-sm font-semibold text-[#333333]">Botão WhatsApp</h3>
+          </div>
+
+          {/* Cor do botão */}
+          <div className="space-y-2">
+            <span className="text-xs font-medium text-[#555]">Cor do botão</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={profile.whatsapp_bg_color?.startsWith('#') ? profile.whatsapp_bg_color : '#25D366'}
+                onChange={e => update('whatsapp_bg_color', e.target.value)}
+                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+              />
+              <input
+                type="text"
+                value={profile.whatsapp_bg_color ?? '#25D366'}
+                onChange={e => { if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) update('whatsapp_bg_color', e.target.value); }}
+                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#25D366] font-mono min-w-0"
+              />
+            </div>
+          </div>
+
+          {/* Cor do ícone */}
+          <div className="space-y-2">
+            <span className="text-xs font-medium text-[#555]">Cor do ícone</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={profile.whatsapp_icon_color?.startsWith('#') ? profile.whatsapp_icon_color : '#ffffff'}
+                onChange={e => update('whatsapp_icon_color', e.target.value)}
+                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+              />
+              <input
+                type="text"
+                value={profile.whatsapp_icon_color ?? '#ffffff'}
+                onChange={e => { if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) update('whatsapp_icon_color', e.target.value); }}
+                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#25D366] font-mono min-w-0"
+              />
+            </div>
+          </div>
+
+          {/* Tamanho */}
+          <div className="space-y-2">
+            <span className="text-xs font-medium text-[#555]">Tamanho</span>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { value: 'normal', label: 'Normal', px: 56 },
+                { value: 'large',  label: 'Grande', px: 68 },
+              ] as const).map(opt => {
+                const selected = (profile.whatsapp_size ?? 'normal') === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update('whatsapp_size', opt.value)}
+                    className={`flex flex-col items-center gap-2 py-3 border-2 rounded-xl transition-colors ${
+                      selected ? 'border-[#25D366] bg-[#e8f8ed]' : 'border-[#E8E8E8] hover:border-[#BFBFBF]'
+                    }`}
+                  >
+                    <div
+                      className="rounded-full flex items-center justify-center"
+                      style={{
+                        width: opt.px * 0.55,
+                        height: opt.px * 0.55,
+                        backgroundColor: profile.whatsapp_bg_color ?? '#25D366',
+                      }}
+                    >
+                      <svg width={opt.px * 0.28} height={opt.px * 0.28} viewBox="0 0 24 24" fill={profile.whatsapp_icon_color ?? '#ffffff'}>
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                      </svg>
+                    </div>
+                    <span className={`text-xs ${selected ? 'text-[#1a8a46] font-semibold' : 'text-[#666]'}`}>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Animação */}
+          <div className="space-y-2">
+            <span className="text-xs font-medium text-[#555]">Animação</span>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { value: 'none',   label: 'Nenhuma' },
+                { value: 'pulse',  label: 'Pulsar'  },
+                { value: 'bounce', label: 'Saltar'  },
+                { value: 'shake',  label: 'Chacoalhar' },
+              ] as const).map(opt => {
+                const selected = (profile.whatsapp_animation ?? 'none') === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update('whatsapp_animation', opt.value)}
+                    className={`py-2.5 px-3 border-2 rounded-xl text-xs transition-colors ${
+                      selected ? 'border-[#25D366] bg-[#e8f8ed] text-[#1a8a46] font-semibold' : 'border-[#E8E8E8] hover:border-[#BFBFBF] text-[#666]'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={handleSave}
         disabled={saving}
@@ -954,7 +1178,19 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   const [saved, setSaved] = useState(false);
   const [themeConfigs, setThemeConfigs] = useState<Record<string, ThemeConfig>>({});
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
-  const [blocked, setBlocked] = useState<string | null>(null);
+  const [previewThemeId, setPreviewThemeId] = useState<string | null>(null);
+  const originalProfileRef = useRef<Profile | null>(null);
+  const onProfileChangeRef = useRef(onProfileChange);
+  useEffect(() => { onProfileChangeRef.current = onProfileChange; });
+
+  // Restore original profile when tab unmounts while in preview mode
+  useEffect(() => {
+    return () => {
+      if (originalProfileRef.current) {
+        onProfileChangeRef.current(originalProfileRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const unique = [...new Set(THEMES.map(t => t.defaults.font_family))];
@@ -963,17 +1199,21 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
     fetchCustomThemes().then(setCustomThemes);
   }, []);
 
+  function cancelPreview() {
+    if (originalProfileRef.current) {
+      onProfileChange(originalProfileRef.current);
+      originalProfileRef.current = null;
+    }
+    setPreviewThemeId(null);
+  }
+
   async function handleSelect(themeId: string) {
     const theme = THEMES.find(t => t.id === themeId);
     const customTheme = customThemes.find(t => t.id === themeId);
     if (!theme && !customTheme) return;
 
-    const isPro = theme ? isThemePro(themeConfigs, themeId) : (customTheme?.is_pro ?? false);
-    if (!canUseTheme(isPro, profile.plan ?? 'free')) {
-      setBlocked(themeId);
-      return;
-    }
-    setBlocked(null);
+    const isPro = theme ? isThemePro(themeConfigs, themeId, theme) : (customTheme?.is_pro ?? false);
+    const isLocked = !canUseTheme(isPro, profile.plan ?? 'free');
 
     const defaults = theme
       ? theme.defaults
@@ -985,6 +1225,23 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           button_style: customTheme!.button_style,
           font_family: customTheme!.font_family,
         };
+
+    if (isLocked) {
+      // Preview only: apply visually but don't save
+      if (!previewThemeId) {
+        originalProfileRef.current = profile;
+      }
+      setPreviewThemeId(themeId);
+
+      onProfileChange({ ...profile, theme_id: themeId, ...defaults });
+      return;
+    }
+
+    // Selecting a free theme: clear preview mode first
+    if (previewThemeId) {
+      setPreviewThemeId(null);
+      originalProfileRef.current = null;
+    }
 
     const updated: Profile = { ...profile, theme_id: themeId, ...defaults };
     onProfileChange(updated);
@@ -1016,11 +1273,19 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           <Check className="w-4 h-4" /> Tema aplicado!
         </div>
       )}
-      {/* Upsell de tema PRO */}
-      {blocked && (
-        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-          <span className="text-base">🔒</span>
-          <span>{themeBlockMessage()}</span>
+      {/* Banner de preview de tema PRO */}
+      {previewThemeId && (
+        <div className="flex items-center justify-between gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 shrink-0" />
+            <span>Você está <strong>visualizando</strong> um tema PRO. Faça upgrade para aplicar.</span>
+          </div>
+          <button
+            onClick={cancelPreview}
+            className="text-xs underline whitespace-nowrap hover:text-amber-900"
+          >
+            Cancelar
+          </button>
         </div>
       )}
 
@@ -1037,9 +1302,12 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-3 gap-y-4">
               {groupThemes.map(theme => {
-                const selected = profile.theme_id === theme.id;
-                const isPro = isThemePro(themeConfigs, theme.id);
+                const isPro = isThemePro(themeConfigs, theme.id, theme);
                 const locked = isPro && !canUseTheme(isPro, profile.plan ?? 'free');
+                const isPreviewing = previewThemeId === theme.id;
+                const isSelected = !previewThemeId
+                  ? profile.theme_id === theme.id
+                  : originalProfileRef.current?.theme_id === theme.id;
                 const d = theme.defaults;
                 const btnRadius = getButtonRadius(d.button_style);
                 return (
@@ -1048,9 +1316,12 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                       onClick={() => handleSelect(theme.id)}
                       title={theme.description}
                       className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 focus:outline-none ${
-                        locked ? 'opacity-60' :
-                        selected
+                        isPreviewing
+                          ? 'ring-2 ring-amber-400 ring-offset-2 shadow-lg scale-[1.04]'
+                          : isSelected
                           ? 'ring-2 ring-[#0B76A0] ring-offset-2 shadow-lg scale-[1.04]'
+                          : locked && !isPreviewing
+                          ? 'opacity-60 hover:opacity-80 hover:scale-[1.03] ring-1 ring-black/10'
                           : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-black/10'
                       }`}
                       style={{ aspectRatio: '3/4' }}
@@ -1090,15 +1361,22 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                         </div>
                       )}
 
-                      {/* Lock overlay */}
-                      {locked && (
+                      {/* Lock overlay (only when not previewing this card) */}
+                      {locked && !isPreviewing && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/25 rounded-2xl">
                           <span className="text-lg">🔒</span>
                         </div>
                       )}
 
+                      {/* Preview eye icon */}
+                      {isPreviewing && (
+                        <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shadow">
+                          <Eye className="w-3 h-3 text-black" />
+                        </div>
+                      )}
+
                       {/* Selected checkmark */}
-                      {selected && !locked && (
+                      {isSelected && !locked && (
                         <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
                           <Check className="w-3 h-3 text-white" />
                         </div>
@@ -1108,7 +1386,8 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                     {/* Theme name below card */}
                     <p
                       className={`text-[11px] text-center leading-tight truncate w-full ${
-                        selected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'
+                        isPreviewing ? 'font-semibold text-amber-600' :
+                        isSelected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'
                       }`}
                     >
                       {theme.name}
@@ -1130,17 +1409,23 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-3 gap-y-4">
             {customThemes.map(theme => {
-              const selected = profile.theme_id === theme.id;
               const locked = theme.is_pro && !canUseTheme(theme.is_pro, profile.plan ?? 'free');
+              const isPreviewing = previewThemeId === theme.id;
+              const isSelected = !previewThemeId
+                ? profile.theme_id === theme.id
+                : originalProfileRef.current?.theme_id === theme.id;
               return (
                 <div key={theme.id} className="flex flex-col items-center gap-1.5">
                   <button
                     onClick={() => handleSelect(theme.id)}
                     title={theme.description}
                     className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 focus:outline-none ${
-                      locked ? 'opacity-60' :
-                      selected
+                      isPreviewing
+                        ? 'ring-2 ring-amber-400 ring-offset-2 shadow-lg scale-[1.04]'
+                        : isSelected
                         ? 'ring-2 ring-[#0B76A0] ring-offset-2 shadow-lg scale-[1.04]'
+                        : locked && !isPreviewing
+                        ? 'opacity-60 hover:opacity-80 hover:scale-[1.03] ring-1 ring-black/10'
                         : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-black/10'
                     }`}
                     style={{ aspectRatio: '3/4' }}
@@ -1154,18 +1439,26 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                         PRO
                       </div>
                     )}
-                    {locked && (
+                    {locked && !isPreviewing && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/25 rounded-2xl">
                         <span className="text-lg">🔒</span>
                       </div>
                     )}
-                    {selected && !locked && (
+                    {isPreviewing && (
+                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shadow">
+                        <Eye className="w-3 h-3 text-black" />
+                      </div>
+                    )}
+                    {isSelected && !locked && (
                       <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                     )}
                   </button>
-                  <p className={`text-[11px] text-center leading-tight truncate w-full ${selected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'}`}>
+                  <p className={`text-[11px] text-center leading-tight truncate w-full ${
+                    isPreviewing ? 'font-semibold text-amber-600' :
+                    isSelected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'
+                  }`}>
                     {theme.name}
                   </p>
                 </div>

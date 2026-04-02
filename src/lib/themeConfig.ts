@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { ThemeDefinition } from '../themes/types';
 
 export interface ThemeConfig {
   id: string;
@@ -21,6 +22,11 @@ export function invalidateThemeConfigCache(): void {
   _cache = null;
 }
 
-export function isThemePro(configs: Record<string, ThemeConfig>, themeId: string): boolean {
-  return configs[themeId]?.is_pro ?? false;
+export function isThemePro(
+  configs: Record<string, ThemeConfig>,
+  themeId: string,
+  definition?: ThemeDefinition,
+): boolean {
+  if (configs[themeId] !== undefined) return configs[themeId].is_pro;
+  return definition?.isPro ?? false;
 }

@@ -89,4 +89,10 @@ export interface Profile {
   plan: 'free' | 'pro';
   role: 'user' | 'admin';
   links: Link[];
+  whatsapp_number?: string;
+  whatsapp_enabled?: boolean;
+  whatsapp_bg_color?: string;
+  whatsapp_icon_color?: string;
+  whatsapp_size?: 'normal' | 'large';
+  whatsapp_animation?: 'none' | 'pulse' | 'bounce' | 'shake';
 }

@@ -15,4 +15,6 @@ export interface ThemeDefinition {
   isWebGL?: boolean;
   /** Explicit group override; defaults to 'animated' if Background exists, 'static' otherwise */
   group?: 'static' | 'animated';
+  /** Marks theme as PRO in the local definition — used as fallback when DB config is absent */
+  isPro?: boolean;
 }

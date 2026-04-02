@@ -5,6 +5,10 @@ import type { ThemeDefinition } from './types';
 const MercuryBackground     = lazy(() => import('./mercury/Background'));
 const QuantumBackground     = lazy(() => import('./quantum/Background'));
 const VoidBackground        = lazy(() => import('./void/Background'));
+const WaveFieldBackground   = lazy(() => import('./wavefield/Background'));
+const FractalBackground     = lazy(() => import('./fractal/Background'));
+const ScanLinesBackground   = lazy(() => import('./scanlines/Background'));
+const CrystalBackground     = lazy(() => import('./crystal/Background'));
 
 // ── CSS animations ────────────────────────────────────────────────────────────
 const AuroraBackground      = lazy(() => import('./aurora/Background'));
@@ -21,6 +25,7 @@ const BubblesBackground       = lazy(() => import('./bubbles/Background'));
 
 // ── Profissões ────────────────────────────────────────────────────────────────
 const AdvogadoBackground      = lazy(() => import('./advogado/Background'));
+const EleganceBackground      = lazy(() => import('./elegance/Background'));
 const MedicoBackground        = lazy(() => import('./medico/Background'));
 const DentistaBackground      = lazy(() => import('./dentista/Background'));
 const PsicologoBackground     = lazy(() => import('./psicologo/Background'));
@@ -66,6 +71,62 @@ export const THEMES: ThemeDefinition[] = [
     },
     Background: QuantumBackground,
     isWebGL: true,
+  },
+  {
+    id: 'wavefield',
+    name: 'Grade Cibernética',
+    description: 'Grade em perspectiva ondulando em tempo real com shader GLSL cyberpunk.',
+    previewStyle: { background: 'linear-gradient(180deg,#000814 0%,#001a2e 50%,#000814 100%)' },
+    defaults: {
+      bg_color: '#000814', text_color: '#00f2ff',
+      button_color: 'rgba(0,242,255,0.08)', button_text_color: '#00f2ff',
+      button_style: 'square', font_family: 'Orbitron',
+    },
+    Background: WaveFieldBackground,
+    isWebGL: true,
+    isPro: true,
+  },
+  {
+    id: 'fractal',
+    name: 'Pulso Fractal',
+    description: 'Fractais hipnóticos pulsando em ciclos de cor turquesa infinitos.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%,#001a1a 0%,#000000 100%)' },
+    defaults: {
+      bg_color: '#000000', text_color: '#00f5ff',
+      button_color: 'rgba(0,245,255,0.1)', button_text_color: '#00e5ff',
+      button_style: 'pill', font_family: 'Space Grotesk',
+    },
+    Background: FractalBackground,
+    isWebGL: true,
+    isPro: true,
+  },
+  {
+    id: 'scanlines',
+    name: 'Scan Torus',
+    description: 'Toros girando com linhas de varredura neon em shader GLSL.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%,#000d10 0%,#000000 100%)' },
+    defaults: {
+      bg_color: '#000000', text_color: '#00f2ff',
+      button_color: 'rgba(0,242,255,0.07)', button_text_color: '#00f2ff',
+      button_style: 'wave', font_family: 'Orbitron',
+    },
+    Background: ScanLinesBackground,
+    isWebGL: true,
+    isPro: true,
+  },
+  {
+    id: 'crystal',
+    name: 'Treliça de Cristal',
+    description: 'Cubo 3D de instâncias wireframe pulsando como um cristal vivo.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%,#001420 0%,#00050a 100%)' },
+    defaults: {
+      bg_color: '#00050a', text_color: '#00f2ff',
+      button_color: 'rgba(0,242,255,0.08)', button_text_color: '#00e5ff',
+      button_style: 'soft', font_family: 'Space Grotesk',
+    },
+    Background: CrystalBackground,
+    isWebGL: true,
+    isPro: true,
   },
   {
     id: 'laser',
@@ -181,6 +242,19 @@ export const THEMES: ThemeDefinition[] = [
     Background: FirefliesBackground,
   },
   // ── Profissões ──────────────────────────────────────────────────────────────
+  {
+    id: 'elegance',
+    name: 'Advocacia Elegance',
+    description: 'Verde-esmeralda profundo com partículas e ornamentos em ouro antigo.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 45%, #0a5044 0%, #053830 100%)' },
+    defaults: {
+      bg_color: '#053830', text_color: '#e8d9a8',
+      button_color: 'rgba(184,151,62,0.18)', button_text_color: '#c9a84c',
+      button_style: 'square', font_family: 'Playfair Display',
+    },
+    Background: EleganceBackground,
+    group: 'static',
+  },
   {
     id: 'advogado',
     name: 'Advocacia',
