@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,7 +6,7 @@ import { THEMES } from '../themes';
 import { invalidateThemeConfigCache } from '../lib/themeConfig';
 import { fetchCustomThemes, invalidateCustomThemeCache, type CustomTheme } from '../lib/customThemes';
 import { FONT_OPTIONS, BUTTON_STYLE_OPTIONS } from '../types';
-import { Loader2, Users, ShieldCheck, ArrowLeft, ToggleLeft, ToggleRight, Crown, Plus, Trash2, Image, Video } from 'lucide-react';
+import { Loader2, Users, ShieldCheck, ArrowLeft, ToggleLeft, ToggleRight, Crown, Plus, Trash2, Image, Video, Pencil, X, Check } from 'lucide-react';
 import logo from '../assets/images/logo.png';
 
 interface AdminProfile {
@@ -22,13 +22,14 @@ interface AdminProfile {
 interface ThemeConfigRow {
   id: string;
   is_pro: boolean;
+  preview_url?: string;
 }
 
 const EMPTY_FORM = {
   name: '', description: '',
   text_color: '#ffffff', button_color: 'rgba(255,255,255,0.15)',
   button_text_color: '#ffffff', button_style: 'rounded',
-  font_family: 'Inter', preview_color: '#0a0a0a', is_pro: false,
+  font_family: 'Inter', preview_color: '#0a0a0a',
 };
 
 export default function AdminPanel() {
@@ -49,9 +50,28 @@ export default function AdminPanel() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
+  const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const [thumbPreview, setThumbPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Editar tema custom ─────────────────────────────────────────────────────
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editThumbFile, setEditThumbFile] = useState<File | null>(null);
+  const [editThumbPreview, setEditThumbPreview] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const editThumbInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Editar preview de tema do sistema ─────────────────────────────────────
+  const [editPreviewId, setEditPreviewId] = useState<string | null>(null);
+  const [editPreviewFile, setEditPreviewFile] = useState<File | null>(null);
+  const [editPreviewFilePreview, setEditPreviewFilePreview] = useState<string | null>(null);
+  const [editPreviewSaving, setEditPreviewSaving] = useState(false);
+  const [editPreviewError, setEditPreviewError] = useState<string | null>(null);
+  const editPreviewInputRef = useRef<HTMLInputElement>(null);
 
   // ── Verificação de autorização (server-side via RLS) ─────────────────────
   const checkAndLoad = useCallback(async () => {
@@ -78,7 +98,7 @@ export default function AdminPanel() {
         .order('created_at', { ascending: false }),
       supabase
         .from('theme_config')
-        .select('id, is_pro')
+        .select('id, is_pro, preview_url')
         .order('id'),
     ]);
 
@@ -134,19 +154,64 @@ export default function AdminPanel() {
     if (mediaInputRef.current) mediaInputRef.current.value = '';
   }
 
+  function handleThumbPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setThumbFile(file);
+    setThumbPreview(URL.createObjectURL(file));
+    if (thumbInputRef.current) thumbInputRef.current.value = '';
+  }
+
   async function handleCreateTheme() {
-    if (!mediaFile || !form.name.trim()) return;
+    if (!form.name.trim() || !mediaFile) return;
+
     setUploading(true);
     setUploadError(null);
+    const MAX_MB = 50;
+    if (mediaFile.size > MAX_MB * 1024 * 1024) {
+      setUploadError(`Arquivo muito grande (${(mediaFile.size / 1024 / 1024).toFixed(0)} MB). Máximo: ${MAX_MB} MB. Comprima o vídeo antes de enviar.`);
+      setUploading(false);
+      return;
+    }
+    const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout ao fazer upload (${label}). Verifique as políticas do bucket theme-media no Supabase.`)), ms)
+        ),
+      ]);
+
     try {
-      const ext = mediaFile.name.split('.').pop();
       const id = `custom_${Date.now()}`;
+
+      // Upload do vídeo/imagem principal
+      const ext = mediaFile.name.split('.').pop();
       const path = `${id}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from('theme-media')
-        .upload(path, mediaFile, { upsert: true, contentType: mediaFile.type });
+      const { error: upErr } = await withTimeout(
+        supabase.storage.from('theme-media').upload(path, mediaFile, { upsert: true, contentType: mediaFile.type }),
+        30_000,
+        'mídia principal'
+      );
       if (upErr) throw upErr;
       const { data: urlData } = supabase.storage.from('theme-media').getPublicUrl(path);
+
+      // Upload da thumbnail (opcional)
+      let thumbnailUrl: string | undefined;
+      if (thumbFile) {
+        const thumbExt = thumbFile.name.split('.').pop();
+        const thumbPath = `${id}_thumb.${thumbExt}`;
+        const { error: thumbErr } = await withTimeout(
+          supabase.storage.from('theme-media').upload(thumbPath, thumbFile, { upsert: true, contentType: thumbFile.type }),
+          15_000,
+          'thumbnail'
+        );
+        if (thumbErr) throw thumbErr;
+        const { data: thumbUrlData } = supabase.storage.from('theme-media').getPublicUrl(thumbPath);
+        thumbnailUrl = thumbUrlData.publicUrl;
+      }
+
+      const isPro = mediaType === 'video';
+
       const { error: dbErr } = await supabase.from('custom_themes').insert({
         id,
         name: form.name.trim(),
@@ -159,7 +224,8 @@ export default function AdminPanel() {
         button_text_color: form.button_text_color,
         button_style: form.button_style,
         font_family: form.font_family,
-        is_pro: form.is_pro,
+        is_pro: isPro,
+        thumbnail_url: thumbnailUrl,
       });
       if (dbErr) throw dbErr;
       invalidateCustomThemeCache();
@@ -168,9 +234,12 @@ export default function AdminPanel() {
       setForm(EMPTY_FORM);
       setMediaFile(null);
       setMediaPreview(null);
+      setThumbFile(null);
+      setThumbPreview(null);
       setShowForm(false);
     } catch (err: any) {
-      setUploadError(err.message ?? 'Erro ao criar tema.');
+      const msg = typeof err?.message === 'string' && err.message ? err.message : JSON.stringify(err) || 'Erro ao criar tema.';
+      setUploadError(msg);
     } finally {
       setUploading(false);
     }
@@ -179,13 +248,134 @@ export default function AdminPanel() {
   async function handleDeleteCustomTheme(theme: CustomTheme) {
     if (!confirm(`Excluir o tema "${theme.name}"? Esta ação não pode ser desfeita.`)) return;
     setSaving(theme.id);
-    // Extrair path do storage da URL pública
-    const path = theme.media_url.split('/theme-media/')[1];
-    if (path) await supabase.storage.from('theme-media').remove([path]);
+    const pathsToRemove: string[] = [];
+    const mediaPath = theme.media_url.split('/theme-media/')[1];
+    if (mediaPath) pathsToRemove.push(mediaPath);
+    const thumbPath = theme.thumbnail_url?.split('/theme-media/')[1];
+    if (thumbPath) pathsToRemove.push(thumbPath);
+    if (pathsToRemove.length > 0) await supabase.storage.from('theme-media').remove(pathsToRemove);
     await supabase.from('custom_themes').delete().eq('id', theme.id);
     invalidateCustomThemeCache();
     setCustomThemes(prev => prev.filter(t => t.id !== theme.id));
     setSaving(null);
+  }
+
+  function openEdit(theme: CustomTheme) {
+    setEditingId(theme.id);
+    setEditThumbFile(null);
+    setEditThumbPreview(theme.thumbnail_url ?? null);
+    setEditError(null);
+  }
+
+  function closeEdit() {
+    setEditingId(null);
+    setEditThumbFile(null);
+    setEditThumbPreview(null);
+    setEditError(null);
+  }
+
+  function handleEditThumbPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditThumbFile(file);
+    setEditThumbPreview(URL.createObjectURL(file));
+    if (editThumbInputRef.current) editThumbInputRef.current.value = '';
+  }
+
+  async function handleSaveEdit(theme: CustomTheme) {
+    if (!editThumbFile) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      // Apagar thumbnail antiga do Storage (se for do nosso bucket)
+      const oldThumbPath = theme.thumbnail_url?.split('/theme-media/')[1];
+      if (oldThumbPath) await supabase.storage.from('theme-media').remove([oldThumbPath]);
+
+      // Upload da nova thumbnail
+      const ext = editThumbFile.name.split('.').pop();
+      const thumbPath = `${theme.id}_thumb.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('theme-media')
+        .upload(thumbPath, editThumbFile, { upsert: true, contentType: editThumbFile.type });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from('theme-media').getPublicUrl(thumbPath);
+      const newThumbUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      const { error: dbErr } = await supabase
+        .from('custom_themes')
+        .update({ thumbnail_url: newThumbUrl })
+        .eq('id', theme.id);
+      if (dbErr) throw dbErr;
+
+      invalidateCustomThemeCache();
+      setCustomThemes(prev => prev.map(t =>
+        t.id === theme.id ? { ...t, thumbnail_url: newThumbUrl } : t
+      ));
+      closeEdit();
+    } catch (err: any) {
+      setEditError(err.message ?? 'Erro ao salvar.');
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  // ── Editar preview de tema do sistema ─────────────────────────────────────
+  function openEditPreview(themeId: string, currentUrl?: string) {
+    setEditPreviewId(themeId);
+    setEditPreviewFile(null);
+    setEditPreviewFilePreview(currentUrl ?? null);
+    setEditPreviewError(null);
+  }
+
+  function closeEditPreview() {
+    setEditPreviewId(null);
+    setEditPreviewFile(null);
+    setEditPreviewFilePreview(null);
+    setEditPreviewError(null);
+  }
+
+  function handleEditPreviewPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditPreviewFile(file);
+    setEditPreviewFilePreview(URL.createObjectURL(file));
+    if (editPreviewInputRef.current) editPreviewInputRef.current.value = '';
+  }
+
+  async function handleSaveThemePreview(themeId: string, currentPreviewUrl?: string) {
+    if (!editPreviewFile) return;
+    setEditPreviewSaving(true);
+    setEditPreviewError(null);
+    try {
+      // Remove previous preview from storage if it was ours
+      const oldPath = currentPreviewUrl?.split('/theme-media/')[1];
+      if (oldPath) await supabase.storage.from('theme-media').remove([oldPath]);
+
+      // Upload new preview
+      const ext = editPreviewFile.name.split('.').pop();
+      const path = `${themeId}_preview.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('theme-media')
+        .upload(path, editPreviewFile, { upsert: true, contentType: editPreviewFile.type });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from('theme-media').getPublicUrl(path);
+      const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      const { error: dbErr } = await supabase
+        .from('theme_config')
+        .upsert({ id: themeId, preview_url: newUrl, updated_at: new Date().toISOString() });
+      if (dbErr) throw dbErr;
+
+      invalidateThemeConfigCache();
+      setThemeConfigs(prev => prev.map(t =>
+        t.id === themeId ? { ...t, preview_url: newUrl } : t
+      ));
+      closeEditPreview();
+    } catch (err: any) {
+      setEditPreviewError(err.message ?? 'Erro ao salvar.');
+    } finally {
+      setEditPreviewSaving(false);
+    }
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
@@ -324,9 +514,9 @@ export default function AdminPanel() {
               {/* Formulário de criação */}
               {showForm && (
                 <div className="p-5 border-b border-[#D9D9D9] space-y-4 bg-[#fafafa]">
-                  {/* Upload de mídia */}
+                  {/* Upload de mídia principal */}
                   <div className="space-y-2">
-                    <span className="text-xs font-medium text-[#555]">Imagem ou vídeo de fundo</span>
+                    <span className="text-xs font-medium text-[#555]">Imagem ou vídeo de fundo *</span>
                     <input
                       ref={mediaInputRef}
                       type="file"
@@ -343,7 +533,7 @@ export default function AdminPanel() {
                         <div className="absolute top-2 right-2 flex gap-2">
                           <span className="px-2 py-0.5 rounded-md bg-black/60 text-white text-[10px] font-semibold flex items-center gap-1">
                             {mediaType === 'video' ? <Video className="w-3 h-3" /> : <Image className="w-3 h-3" />}
-                            {mediaType === 'video' ? 'Vídeo' : 'Imagem'}
+                            {mediaType === 'video' ? 'Vídeo · PRO' : 'Imagem · Grátis'}
                           </span>
                           <button
                             onClick={() => { setMediaFile(null); setMediaPreview(null); }}
@@ -360,6 +550,38 @@ export default function AdminPanel() {
                         <span>Clique para selecionar imagem ou vídeo</span>
                       </button>
                     )}
+                  </div>
+
+                  {/* Upload de thumbnail (obrigatória para vídeo, opcional para imagem) */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-medium text-[#555]">
+                      Thumbnail {mediaType === 'video' ? '(recomendada para vídeo)' : '(opcional)'}
+                    </span>
+                    <input
+                      ref={thumbInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleThumbPick}
+                    />
+                    {thumbPreview ? (
+                      <div className="relative w-32 h-20 rounded-xl overflow-hidden border border-[#D9D9D9]">
+                        <img src={thumbPreview} className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => { setThumbFile(null); setThumbPreview(null); }}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center hover:bg-black/80"
+                        >✕</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => thumbInputRef.current?.click()}
+                        className="w-32 h-20 border-2 border-dashed border-[#D9D9D9] rounded-xl text-xs text-[#888] hover:border-[#0B76A0] hover:text-[#0B76A0] transition-colors flex flex-col items-center justify-center gap-1"
+                      >
+                        <Image className="w-4 h-4" />
+                        <span>Thumbnail</span>
+                      </button>
+                    )}
+                    <p className="text-[10px] text-[#BFBFBF]">Exibida na galeria de temas no lugar do vídeo</p>
                   </div>
 
                   {/* Nome e descrição */}
@@ -428,22 +650,23 @@ export default function AdminPanel() {
                     </label>
                   </div>
 
-                  {/* PRO toggle */}
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={form.is_pro}
-                      onChange={e => setForm(f => ({ ...f, is_pro: e.target.checked }))}
-                      className="w-4 h-4 accent-[#0B76A0]"
-                    />
-                    <span className="text-sm text-[#555]">Tema exclusivo PRO</span>
-                  </label>
+                  {/* PRO é determinado automaticamente pelo tipo de mídia */}
+                  <p className="text-xs text-[#888]">
+                    ℹ️ Vídeos são sempre PRO. Imagens são sempre Grátis.
+                  </p>
 
                   {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
 
                   <div className="flex gap-3 pt-1">
                     <button
-                      onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setMediaFile(null); setMediaPreview(null); }}
+                      onClick={() => {
+                        setShowForm(false);
+                        setForm(EMPTY_FORM);
+                        setMediaFile(null);
+                        setMediaPreview(null);
+                        setThumbFile(null);
+                        setThumbPreview(null);
+                      }}
                       className="flex-1 py-2.5 border border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:bg-[#f5f5f5] transition-colors"
                     >
                       Cancelar
@@ -464,45 +687,133 @@ export default function AdminPanel() {
               {customThemes.length === 0 && !showForm ? (
                 <p className="px-4 py-6 text-sm text-[#BFBFBF] text-center">Nenhum tema personalizado criado ainda.</p>
               ) : (
+                <>
+                <input
+                  ref={editThumbInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleEditThumbPick}
+                />
                 <table className="w-full text-sm">
                   <tbody className="divide-y divide-[#D9D9D9]">
                     {customThemes.map(theme => (
-                      <tr key={theme.id} className="hover:bg-[#f5f5f5] transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-[#D9D9D9]">
-                              {theme.media_type === 'video'
-                                ? <video src={theme.media_url} muted className="w-full h-full object-cover" />
-                                : <img src={theme.media_url} className="w-full h-full object-cover" />
-                              }
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-[#000000]">{theme.name}</p>
-                                {theme.is_pro && (
-                                  <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[9px] font-black">PRO</span>
-                                )}
-                                <span className="px-1.5 py-0.5 rounded-md bg-[#f0f0f0] text-[#888] text-[9px] font-medium uppercase">
-                                  {theme.media_type === 'video' ? 'Vídeo' : 'Imagem'}
-                                </span>
+                      <React.Fragment key={theme.id}>
+                        <tr className="hover:bg-[#f5f5f5] transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-[#D9D9D9]">
+                                {theme.media_type === 'video'
+                                  ? theme.thumbnail_url
+                                    ? <img src={theme.thumbnail_url} className="w-full h-full object-cover" />
+                                    : <video src={theme.media_url} muted className="w-full h-full object-cover" />
+                                  : <img src={theme.media_url} className="w-full h-full object-cover" />
+                                }
                               </div>
-                              {theme.description && <p className="text-xs text-[#BFBFBF]">{theme.description}</p>}
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-[#000000]">{theme.name}</p>
+                                  {theme.is_pro && (
+                                    <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[9px] font-black">PRO</span>
+                                  )}
+                                  <span className="px-1.5 py-0.5 rounded-md bg-[#f0f0f0] text-[#888] text-[9px] font-medium uppercase">
+                                    {theme.media_type === 'video' ? 'Vídeo' : 'Imagem'}
+                                  </span>
+                                </div>
+                                {theme.description && <p className="text-xs text-[#BFBFBF]">{theme.description}</p>}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => handleDeleteCustomTheme(theme)}
-                            disabled={saving === theme.id}
-                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            {saving === theme.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                          </button>
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => editingId === theme.id ? closeEdit() : openEdit(theme)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  editingId === theme.id
+                                    ? 'bg-[#e8f4f8] text-[#0B76A0]'
+                                    : 'text-[#BFBFBF] hover:text-[#0B76A0] hover:bg-[#e8f4f8]'
+                                }`}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCustomTheme(theme)}
+                                disabled={saving === theme.id}
+                                className="p-2 text-[#BFBFBF] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                              >
+                                {saving === theme.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Painel de edição inline */}
+                        {editingId === theme.id && (
+                          <tr>
+                            <td colSpan={2} className="px-4 py-4 bg-[#f8fafc] border-t border-[#e8f4f8]">
+                              <div className="flex items-start gap-4">
+                                {/* Thumbnail atual / nova */}
+                                <div className="flex flex-col items-center gap-2">
+                                  <span className="text-[10px] font-medium text-[#555] uppercase tracking-wider">Thumbnail</span>
+                                  <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#D9D9D9] flex-shrink-0">
+                                    {editThumbPreview
+                                      ? <img src={editThumbPreview} className="w-full h-full object-cover" />
+                                      : <div className="w-full h-full flex items-center justify-center bg-[#f0f0f0]">
+                                          <Image className="w-5 h-5 text-[#BFBFBF]" />
+                                        </div>
+                                    }
+                                    {editThumbFile && (
+                                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                                        <Check className="w-2.5 h-2.5 text-white" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => editThumbInputRef.current?.click()}
+                                    className="text-[10px] text-[#0B76A0] hover:underline whitespace-nowrap"
+                                  >
+                                    {editThumbPreview ? 'Trocar imagem' : 'Selecionar imagem'}
+                                  </button>
+                                </div>
+
+                                {/* Ações */}
+                                <div className="flex-1 flex flex-col justify-between gap-3 pt-5">
+                                  {editError && (
+                                    <p className="text-xs text-red-500">{editError}</p>
+                                  )}
+                                  {!editThumbFile && (
+                                    <p className="text-xs text-[#BFBFBF]">Selecione uma nova imagem de thumbnail para substituir a atual.</p>
+                                  )}
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={closeEdit}
+                                      className="flex items-center gap-1.5 px-3 py-2 border border-[#D9D9D9] rounded-xl text-xs text-[#555] hover:bg-[#f5f5f5] transition-colors"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                      Cancelar
+                                    </button>
+                                    <button
+                                      onClick={() => handleSaveEdit(theme)}
+                                      disabled={editSaving || !editThumbFile}
+                                      className="flex items-center gap-1.5 px-3 py-2 bg-[#0B76A0] text-white text-xs font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
+                                    >
+                                      {editSaving
+                                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        : <Check className="w-3.5 h-3.5" />
+                                      }
+                                      {editSaving ? 'Salvando…' : 'Salvar thumbnail'}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
+                </>
               )}
             </div>
 
@@ -511,40 +822,123 @@ export default function AdminPanel() {
               <div className="px-4 py-3 border-b border-[#D9D9D9] bg-[#f5f5f5]">
                 <span className="text-xs font-semibold text-[#BFBFBF] uppercase tracking-wider">Temas do sistema</span>
               </div>
+              <input
+                ref={editPreviewInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleEditPreviewPick}
+              />
               <table className="w-full text-sm">
                 <tbody className="divide-y divide-[#D9D9D9]">
                   {THEMES.map(theme => {
                     const config = themeConfigs.find(t => t.id === theme.id);
                     const isPro = config?.is_pro ?? false;
+                    const previewUrl = config?.preview_url;
                     return (
-                      <tr key={theme.id} className="hover:bg-[#f5f5f5] transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg flex-shrink-0" style={theme.previewStyle as React.CSSProperties} />
-                            <div>
-                              <p className="font-medium text-[#000000]">{theme.name}</p>
-                              <p className="text-xs text-[#BFBFBF]">{theme.description}</p>
+                      <React.Fragment key={theme.id}>
+                        <tr className="hover:bg-[#f5f5f5] transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden border border-[#D9D9D9]">
+                                {previewUrl
+                                  ? <img src={previewUrl} className="w-full h-full object-cover" />
+                                  : <div className="w-full h-full" style={theme.previewStyle as React.CSSProperties} />
+                                }
+                              </div>
+                              <div>
+                                <p className="font-medium text-[#000000]">{theme.name}</p>
+                                <p className="text-xs text-[#BFBFBF]">{theme.description}</p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => toggleThemePro(theme.id, isPro)}
-                            disabled={saving === theme.id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
-                            style={{
-                              background: isPro ? '#fef3c7' : '#f5f5f5',
-                              color: isPro ? '#92400e' : '#555555',
-                            }}
-                          >
-                            {saving === theme.id
-                              ? <Loader2 className="w-3 h-3 animate-spin" />
-                              : isPro ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />
-                            }
-                            {isPro ? 'PRO' : 'Grátis'}
-                          </button>
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => editPreviewId === theme.id ? closeEditPreview() : openEditPreview(theme.id, previewUrl)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                  editPreviewId === theme.id
+                                    ? 'bg-[#e8f4f8] text-[#0B76A0]'
+                                    : 'text-[#BFBFBF] hover:text-[#0B76A0] hover:bg-[#e8f4f8]'
+                                }`}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => toggleThemePro(theme.id, isPro)}
+                                disabled={saving === theme.id}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                                style={{
+                                  background: isPro ? '#fef3c7' : '#f5f5f5',
+                                  color: isPro ? '#92400e' : '#555555',
+                                }}
+                              >
+                                {saving === theme.id
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : isPro ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />
+                                }
+                                {isPro ? 'PRO' : 'Grátis'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {editPreviewId === theme.id && (
+                          <tr>
+                            <td colSpan={2} className="px-4 py-4 bg-[#f8fafc] border-t border-[#e8f4f8]">
+                              <div className="flex items-start gap-4">
+                                <div className="flex flex-col items-center gap-2">
+                                  <span className="text-[10px] font-medium text-[#555] uppercase tracking-wider">Preview</span>
+                                  <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#D9D9D9] flex-shrink-0">
+                                    {editPreviewFilePreview
+                                      ? <img src={editPreviewFilePreview} className="w-full h-full object-cover" />
+                                      : <div className="w-full h-full" style={theme.previewStyle as React.CSSProperties} />
+                                    }
+                                    {editPreviewFile && (
+                                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                                        <Check className="w-2.5 h-2.5 text-white" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => editPreviewInputRef.current?.click()}
+                                    className="text-[10px] text-[#0B76A0] hover:underline whitespace-nowrap"
+                                  >
+                                    {editPreviewFilePreview ? 'Trocar imagem' : 'Selecionar imagem'}
+                                  </button>
+                                </div>
+
+                                <div className="flex-1 flex flex-col justify-between gap-3 pt-5">
+                                  {editPreviewError && <p className="text-xs text-red-500">{editPreviewError}</p>}
+                                  {!editPreviewFile && (
+                                    <p className="text-xs text-[#BFBFBF]">Selecione uma imagem para substituir o preview gradiente do tema.</p>
+                                  )}
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={closeEditPreview}
+                                      className="flex items-center gap-1.5 px-3 py-2 border border-[#D9D9D9] rounded-xl text-xs text-[#555] hover:bg-[#f5f5f5] transition-colors"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                      Cancelar
+                                    </button>
+                                    <button
+                                      onClick={() => handleSaveThemePreview(theme.id, previewUrl)}
+                                      disabled={editPreviewSaving || !editPreviewFile}
+                                      className="flex items-center gap-1.5 px-3 py-2 bg-[#0B76A0] text-white text-xs font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
+                                    >
+                                      {editPreviewSaving
+                                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        : <Check className="w-3.5 h-3.5" />
+                                      }
+                                      {editPreviewSaving ? 'Salvando…' : 'Salvar preview'}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>

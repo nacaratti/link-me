@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
 import { getTheme } from '../themes';
-import { ICON_MAP, getButtonRadius } from '../types';
+import { ICON_MAP, getButtonRadius, STATUS_TAGS, FONT_OPTIONS } from '../types';
 import ThemeBackground from '../themes/ThemeBackground';
 import { fetchCustomThemes, type CustomTheme } from '../lib/customThemes';
 import { ExternalLink, AlertCircle } from 'lucide-react';
@@ -135,13 +135,92 @@ export default function PublicProfile() {
         </>
       )}
 
+      {/* Video background — desktop-aware layout (mirrors bg_image_url pattern) */}
+      {customTheme?.media_type === 'video' && (
+        <>
+          {/* Mobile: video covers the full page */}
+          <video
+            src={customTheme.media_url}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="none"
+            poster={customTheme.thumbnail_url}
+            className="absolute inset-0 sm:hidden w-full h-full object-cover pointer-events-none"
+            style={{ zIndex: 0 }}
+          />
+          {/* Desktop: video constrained in centred column */}
+          <div className="absolute inset-0 hidden sm:flex items-stretch justify-center" style={{ zIndex: 0 }}>
+            <div className="w-full max-w-[580px] flex-shrink-0 my-4 rounded-[2.5rem] overflow-hidden shadow-2xl">
+              <video
+                src={customTheme.media_url}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="none"
+                poster={customTheme.thumbnail_url}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+          {/* Desktop gradient fades — left and right */}
+          <div
+            className="absolute inset-y-0 left-0 hidden sm:block pointer-events-none"
+            style={{
+              width: 'calc((100% - 580px) / 2 + 60px)',
+              background: `linear-gradient(to right, ${profile.bg_color} 50%, transparent 100%)`,
+              zIndex: 2,
+            }}
+          />
+          <div
+            className="absolute inset-y-0 right-0 hidden sm:block pointer-events-none"
+            style={{
+              width: 'calc((100% - 580px) / 2 + 60px)',
+              background: `linear-gradient(to left, ${profile.bg_color} 50%, transparent 100%)`,
+              zIndex: 2,
+            }}
+          />
+        </>
+      )}
+
       {/* Theme background layer */}
       <ThemeBackground
         Background={customTheme ? undefined : theme.Background}
-        mediaUrl={customTheme?.media_url}
+        mediaUrl={customTheme?.media_type !== 'video' ? customTheme?.media_url : undefined}
         mediaType={customTheme?.media_type}
+        thumbnailUrl={customTheme?.thumbnail_url}
         themeId={profile.theme_id}
       />
+
+      {/* Status tag — posições fixas */}
+      {profile.status_tag_enabled && profile.status_tag && (() => {
+        const tag = STATUS_TAGS.find(t => t.id === profile.status_tag);
+        const pos = profile.status_tag_position ?? 'above-left';
+        if (!tag || !pos.startsWith('fixed')) return null;
+        const posClass = pos === 'fixed-tr' ? 'fixed top-4 right-4 z-50' : 'fixed top-4 left-4 z-50';
+        const color = profile.status_tag_color ?? tag.color;
+        const bg    = profile.status_tag_bg    ?? tag.bg;
+        const size  = profile.status_tag_size  ?? 'md';
+        const sizeClass = size === 'sm' ? 'px-2.5 py-1 text-[10px] gap-1' : size === 'lg' ? 'px-4 py-2 text-sm gap-2' : 'px-3 py-1.5 text-xs gap-1.5';
+        const dotClass  = size === 'sm' ? 'w-1.5 h-1.5' : size === 'lg' ? 'w-2.5 h-2.5' : 'w-2 h-2';
+        const icon  = profile.status_tag_icon ?? 'dot';
+        const font  = profile.status_tag_font;
+        return (
+          <motion.div initial={{ opacity: 0, x: pos === 'fixed-tr' ? 12 : -12 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, type: 'spring', stiffness: 300, damping: 24 }} className={posClass}>
+            <span className={`inline-flex items-center font-semibold rounded-full backdrop-blur-md shadow-lg ${sizeClass}`}
+              style={{ color, backgroundColor: bg, border: `1px solid ${color}50`,
+                fontFamily: font ? `'${font}', sans-serif` : undefined }}>
+              {icon === 'dot'
+                ? <span className={`rounded-full flex-shrink-0 tag-dot-pulse ${dotClass}`} style={{ backgroundColor: color }} />
+                : <span className="leading-none">{icon}</span>}
+              {profile.status_tag_custom_label?.trim() || tag.label}
+            </span>
+          </motion.div>
+        );
+      })()}
 
       {/* Content layer */}
       <motion.div
@@ -179,6 +258,35 @@ export default function PublicProfile() {
           )}
         </div>
 
+        {/* Status tag — acima dos links */}
+        {profile.status_tag_enabled && profile.status_tag && (() => {
+          const tag = STATUS_TAGS.find(t => t.id === profile.status_tag);
+          const pos = profile.status_tag_position ?? 'above-left';
+          if (!tag || !pos.startsWith('above')) return null;
+          const color = profile.status_tag_color ?? tag.color;
+          const bg    = profile.status_tag_bg    ?? tag.bg;
+          const size  = profile.status_tag_size  ?? 'md';
+          const sizeClass = size === 'sm' ? 'px-2.5 py-1 text-[10px] gap-1' : size === 'lg' ? 'px-4 py-2 text-sm gap-2' : 'px-3 py-1.5 text-xs gap-1.5';
+          const dotClass  = size === 'sm' ? 'w-1.5 h-1.5' : size === 'lg' ? 'w-2.5 h-2.5' : 'w-2 h-2';
+          const icon  = profile.status_tag_icon ?? 'dot';
+          const font  = profile.status_tag_font;
+          const justify = pos === 'above-center' ? 'justify-center' : pos === 'above-right' ? 'justify-end' : 'justify-start';
+          return (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 24 }}
+              className={`w-full sm:w-[420px] flex ${justify} mb-2`}>
+              <span className={`tag-fade-in inline-flex items-center font-semibold rounded-full backdrop-blur-sm shadow-sm ${sizeClass}`}
+                style={{ color, backgroundColor: bg, border: `1px solid ${color}40`,
+                  fontFamily: font ? `'${font}', sans-serif` : undefined }}>
+                {icon === 'dot'
+                  ? <span className={`rounded-full flex-shrink-0 tag-dot-pulse ${dotClass}`} style={{ backgroundColor: color }} />
+                  : <span className="leading-none">{icon}</span>}
+                {profile.status_tag_custom_label?.trim() || tag.label}
+              </span>
+            </motion.div>
+          );
+        })()}
+
         <div className="w-full sm:w-[420px] flex flex-col gap-3">
           {profile.links.map((link, index) => {
             const Icon = ICON_MAP[link.icon_type] ?? ExternalLink;
@@ -194,7 +302,7 @@ export default function PublicProfile() {
                 transition={{ delay: index * 0.07 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center justify-between px-4 shadow-sm transition-all group backdrop-blur-sm"
+                className="flex items-center justify-between px-4 py-3 shadow-sm transition-all group backdrop-blur-sm"
                 style={{
                   minHeight: '50px',
                   backgroundColor: profile.button_color,
@@ -208,13 +316,13 @@ export default function PublicProfile() {
                     <Icon className="w-5 h-5" />
                   </div>
                   <span
-                  className="font-medium"
-                  style={{ fontFamily: profile.button_font ? `'${profile.button_font}', sans-serif` : undefined }}
-                >
-                  {link.title}
-                </span>
+                    className="font-medium"
+                    style={{ fontFamily: profile.button_font ? `'${profile.button_font}', sans-serif` : undefined }}
+                  >
+                    {link.title}
+                  </span>
                 </div>
-                <ExternalLink className="w-4 h-4 opacity-20 group-hover:opacity-50 transition-opacity" />
+                <ExternalLink className="w-4 h-4 opacity-20 group-hover:opacity-50 transition-opacity flex-shrink-0" />
               </motion.a>
             );
           })}

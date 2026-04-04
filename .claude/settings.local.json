@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(node -e \"const l = require\\('./node_modules/lucide-react'\\); console.log\\('Tag' in l, 'Tags' in l\\)\")"
     ]
   }
 }

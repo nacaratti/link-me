@@ -13,6 +13,7 @@ export interface CustomTheme {
   button_style: string;
   font_family: string;
   is_pro: boolean;
+  thumbnail_url?: string;
   created_at: string;
 }
 

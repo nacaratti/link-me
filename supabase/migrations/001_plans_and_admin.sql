@@ -25,8 +25,6 @@ INSERT INTO theme_config (id, is_pro) VALUES
   ('laser',         true),
   ('void',          true),
   ('aurora',        true),
-  ('sunset',        true),
-  ('neon',          true),
   ('blob',          true),
   ('constellation', true),
   ('ripple',        true),

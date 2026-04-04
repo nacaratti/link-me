@@ -12,8 +12,6 @@ const CrystalBackground     = lazy(() => import('./crystal/Background'));
 
 // ── CSS animations ────────────────────────────────────────────────────────────
 const AuroraBackground      = lazy(() => import('./aurora/Background'));
-const SunsetBackground      = lazy(() => import('./sunset/Background'));
-const NeonBackground        = lazy(() => import('./neon/Background'));
 
 // ── Canvas 2D ─────────────────────────────────────────────────────────────────
 const LaserBackground         = lazy(() => import('./laser/Background'));
@@ -167,31 +165,6 @@ export const THEMES: ThemeDefinition[] = [
     },
     Background: AuroraBackground,
   },
-  {
-    id: 'sunset',
-    name: 'Pôr do Sol',
-    description: 'Camadas de gradiente quente em roxo, magenta e laranja dourado.',
-    previewStyle: { background: 'linear-gradient(180deg,#12001e 0%,#500040 42%,#a00050 70%,#e05000 100%)' },
-    defaults: {
-      bg_color: '#12001e', text_color: '#ffd4a8',
-      button_color: 'rgba(255,100,50,0.15)', button_text_color: '#ffb080',
-      button_style: 'wave', font_family: 'Playfair Display',
-    },
-    Background: SunsetBackground,
-  },
-  {
-    id: 'neon',
-    name: 'Neon Grid',
-    description: 'Grade cyberpunk em perspectiva com orbes neon pulsantes.',
-    previewStyle: { background: 'radial-gradient(ellipse at 50% 110%,#00ffee18 0%,#ff00cc10 45%,#000000 100%)' },
-    defaults: {
-      bg_color: '#000000', text_color: '#00ffee',
-      button_color: 'rgba(0,255,220,0.08)', button_text_color: '#00ffee',
-      button_style: 'square', font_family: 'Orbitron',
-    },
-    Background: NeonBackground,
-  },
-
   // ── Canvas 2D ──────────────────────────────────────────────────────────────
   {
     id: 'constellation',

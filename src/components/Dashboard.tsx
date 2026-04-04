@@ -3,12 +3,12 @@ import { Reorder } from 'motion/react';
 import {
   Plus, Trash2, GripVertical, ExternalLink, Settings,
   Link as LinkIcon, Layout, Loader2, LogOut, Eye, EyeOff, Save,
-  Check, Palette, X, Smartphone, ShieldCheck, Camera,
+  Check, Palette, X, Smartphone, ShieldCheck, Camera, Tag,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
 import { useAuth } from '../contexts/AuthContext';
-import { ICON_MAP, FONT_OPTIONS, BUTTON_STYLE_OPTIONS, getButtonRadius, type Profile, type Link } from '../types';
+import { ICON_MAP, FONT_OPTIONS, BUTTON_STYLE_OPTIONS, getButtonRadius, STATUS_TAGS, STATUS_TAG_SIZES, STATUS_TAG_POSITIONS, STATUS_TAG_ICONS, type Profile, type Link } from '../types';
 import { THEMES, getTheme } from '../themes';
 import ThemeBackground from '../themes/ThemeBackground';
 import logo from '../assets/images/logo.png';
@@ -18,6 +18,135 @@ import { fetchCustomThemes, type CustomTheme } from '../lib/customThemes';
 import WhatsappFloatingButton from './WhatsappFloatingButton';
 
 type Tab = 'links' | 'theme' | 'appearance' | 'profile' | 'preview';
+
+// ─── Status Tag components ────────────────────────────────────────────────────
+
+type TagDef = typeof STATUS_TAGS[number];
+
+interface StatusTagDisplayProps {
+  tag: TagDef;
+  profile: Pick<Profile, 'status_tag_color' | 'status_tag_bg' | 'status_tag_size' | 'status_tag_font' | 'status_tag_icon' | 'status_tag_custom_label'>;
+  previewSize?: 'xs' | 'sm';
+}
+
+function StatusTagDisplay({ tag, profile, previewSize }: StatusTagDisplayProps) {
+  const size = previewSize ?? profile.status_tag_size ?? 'md';
+  const sizeClass = size === 'sm' || size === 'xs'
+    ? 'px-2 py-0.5 text-[9px] gap-1'
+    : size === 'lg'
+    ? 'px-4 py-2 text-sm gap-2'
+    : 'px-3 py-1.5 text-xs gap-1.5';
+  const dotClass = size === 'sm' || size === 'xs' ? 'w-1 h-1' : size === 'lg' ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5';
+  const color = profile.status_tag_color ?? tag.color;
+  const bg    = profile.status_tag_bg    ?? tag.bg;
+  const icon  = profile.status_tag_icon  ?? 'dot';
+  const font  = profile.status_tag_font;
+  const label = profile.status_tag_custom_label?.trim() || tag.label;
+  return (
+    <span
+      className={`tag-fade-in inline-flex items-center font-semibold rounded-full backdrop-blur-sm shadow-sm ${sizeClass}`}
+      style={{ color, backgroundColor: bg, border: `1px solid ${color}40`, fontFamily: font ? `'${font}', sans-serif` : undefined }}
+    >
+      {icon === 'dot'
+        ? <span className={`rounded-full flex-shrink-0 tag-dot-pulse ${dotClass}`} style={{ backgroundColor: color }} />
+        : <span className="leading-none">{icon}</span>
+      }
+      {label}
+    </span>
+  );
+}
+
+function StatusTagCard({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
+  const [saving, setSaving] = useState(false);
+
+  async function handleToggle() {
+    const newEnabled = !profile.status_tag_enabled;
+    setSaving(true);
+    const { error } = await supabase.from('profiles').update({ status_tag_enabled: newEnabled }).eq('id', profile.id);
+    if (!error) onProfileChange({ ...profile, status_tag_enabled: newEnabled });
+    setSaving(false);
+  }
+
+  async function handleSelect(tagId: string) {
+    setSaving(true);
+    const { error } = await supabase.from('profiles').update({ status_tag: tagId }).eq('id', profile.id);
+    if (!error) onProfileChange({ ...profile, status_tag: tagId });
+    setSaving(false);
+  }
+
+  const enabled = profile.status_tag_enabled ?? false;
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-[#333333]">Tag de status</h3>
+          <p className="text-xs text-[#BFBFBF] mt-0.5">Aparece acima dos links no seu perfil</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={saving}
+          style={{ touchAction: 'manipulation' }}
+          className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${enabled ? 'bg-[#0B76A0]' : 'bg-[#D9D9D9]'}`}
+        >
+          <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${enabled ? 'left-[22px]' : 'left-0.5'}`} />
+        </button>
+      </div>
+
+      {enabled && (
+        <div className="space-y-3">
+          <p className="text-[10px] font-semibold text-[#BFBFBF] uppercase tracking-wider">Escolha o status</p>
+          <div className="flex flex-wrap gap-2">
+            {STATUS_TAGS.map(tag => {
+              const active = profile.status_tag === tag.id;
+              return (
+                <button
+                  key={tag.id}
+                  onClick={() => handleSelect(tag.id)}
+                  style={{
+                    color: active ? tag.color : '#888',
+                    backgroundColor: active ? tag.bg : '#f5f5f5',
+                    borderColor: active ? tag.color : 'transparent',
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 hover:scale-105 active:scale-95"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${active ? 'tag-dot-pulse' : ''}`}
+                    style={{ backgroundColor: active ? tag.color : '#bbb' }} />
+                  {tag.label}
+                  {active && <Check className="w-3 h-3 ml-0.5" />}
+                </button>
+              );
+            })}
+          </div>
+          {/* Texto customizado */}
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold text-[#BFBFBF] uppercase tracking-wider">Texto personalizado</p>
+            <div className="relative">
+              <input
+                type="text"
+                maxLength={28}
+                placeholder={STATUS_TAGS.find(t => t.id === profile.status_tag)?.label ?? 'Ex: Freelancer'}
+                value={profile.status_tag_custom_label ?? ''}
+                onChange={e => onProfileChange({ ...profile, status_tag_custom_label: e.target.value || null })}
+                onBlur={async e => {
+                  const val = e.target.value.trim() || null;
+                  await supabase.from('profiles').update({ status_tag_custom_label: val }).eq('id', profile.id);
+                }}
+                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0] pr-10"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#BFBFBF]">
+                {(profile.status_tag_custom_label ?? '').length}/28
+              </span>
+            </div>
+            <p className="text-[10px] text-[#BFBFBF]">Deixe vazio para usar o texto padrão</p>
+          </div>
+          <p className="text-[10px] text-[#BFBFBF]">Personalize cor, tamanho e posição na aba <strong>Aparência</strong></p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Mobile Full Preview (tab preview no celular) ────────────────────────────
 
@@ -68,7 +197,19 @@ function MobileFullPreview({ profile }: { profile: Profile }) {
             {profile.bio}
           </p>
         )}
-        <div className="w-full max-w-sm flex flex-col gap-3 mt-2">
+        {/* Status tag — acima dos links (posições "above-*") */}
+        {profile.status_tag_enabled && profile.status_tag && (() => {
+          const tag = STATUS_TAGS.find(t => t.id === profile.status_tag);
+          const pos = profile.status_tag_position ?? 'above-left';
+          if (!tag || !pos.startsWith('above')) return null;
+          const align = pos === 'above-center' ? 'items-center' : pos === 'above-right' ? 'items-end' : 'items-start';
+          return (
+            <div className={`w-full max-w-sm flex flex-col ${align} mb-3`}>
+              <StatusTagDisplay tag={tag} profile={profile} previewSize="sm" />
+            </div>
+          );
+        })()}
+        <div className="w-full max-w-sm flex flex-col gap-3">
           {profile.links.filter(l => l.is_active).map(link => {
             const Icon = ICON_MAP[link.icon_type] ?? ICON_MAP.link;
             return (
@@ -95,6 +236,14 @@ function MobileFullPreview({ profile }: { profile: Profile }) {
           )}
         </div>
       </div>
+      {/* Status tag — posições fixas */}
+      {profile.status_tag_enabled && profile.status_tag && (() => {
+        const tag = STATUS_TAGS.find(t => t.id === profile.status_tag);
+        const pos = profile.status_tag_position ?? 'above-left';
+        if (!tag || !pos.startsWith('fixed')) return null;
+        const cls = pos === 'fixed-tr' ? 'absolute top-4 right-4 z-20' : 'absolute top-4 left-4 z-20';
+        return <div className={cls}><StatusTagDisplay tag={tag} profile={profile} previewSize="sm" /></div>;
+      })()}
       {profile.whatsapp_enabled && profile.whatsapp_number && (
         <WhatsappFloatingButton
           number={profile.whatsapp_number}
@@ -176,6 +325,18 @@ function MobilePreview({ profile }: { profile: Profile }) {
               {profile.bio}
             </p>
           )}
+          {/* Status tag — acima dos links */}
+          {profile.status_tag_enabled && profile.status_tag && (() => {
+            const tag = STATUS_TAGS.find(t => t.id === profile.status_tag);
+            const pos = profile.status_tag_position ?? 'above-left';
+            if (!tag || !pos.startsWith('above')) return null;
+            const align = pos === 'above-center' ? 'items-center' : pos === 'above-right' ? 'items-end' : 'items-start';
+            return (
+              <div className={`w-full flex flex-col ${align} mb-2`}>
+                <StatusTagDisplay tag={tag} profile={profile} previewSize="xs" />
+              </div>
+            );
+          })()}
           <div className="w-full flex flex-col gap-2.5">
             {profile.links.filter(l => l.is_active).map(link => {
               const Icon = ICON_MAP[link.icon_type] ?? ICON_MAP.link;
@@ -201,6 +362,14 @@ function MobilePreview({ profile }: { profile: Profile }) {
           </div>
         </div>
       </div>
+      {/* Status tag — posições fixas */}
+      {profile.status_tag_enabled && profile.status_tag && (() => {
+        const tag = STATUS_TAGS.find(t => t.id === profile.status_tag);
+        const pos = profile.status_tag_position ?? 'above-left';
+        if (!tag || !pos.startsWith('fixed')) return null;
+        const cls = pos === 'fixed-tr' ? 'absolute top-3 right-3 z-20' : 'absolute top-3 left-3 z-20';
+        return <div className={cls}><StatusTagDisplay tag={tag} profile={profile} previewSize="xs" /></div>;
+      })()}
       {profile.whatsapp_enabled && profile.whatsapp_number && (
         <WhatsappFloatingButton
           number={profile.whatsapp_number}
@@ -390,6 +559,9 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
           <span>{linkBlockMessage(profile.plan ?? 'free')}</span>
         </div>
       )}
+
+      {/* Status Tag */}
+      <StatusTagCard profile={profile} onProfileChange={onProfileChange} />
 
       {/* WhatsApp flutuante */}
       <div className={`bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4 ${(profile.plan ?? 'free') !== 'pro' ? 'opacity-70' : ''}`}>
@@ -698,6 +870,13 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
       whatsapp_icon_color: profile.whatsapp_icon_color ?? null,
       whatsapp_size: profile.whatsapp_size ?? null,
       whatsapp_animation: profile.whatsapp_animation ?? null,
+      status_tag_color: profile.status_tag_color ?? null,
+      status_tag_bg: profile.status_tag_bg ?? null,
+      status_tag_size: profile.status_tag_size ?? 'md',
+      status_tag_position: profile.status_tag_position ?? 'above-left',
+      status_tag_font: profile.status_tag_font ?? null,
+      status_tag_icon: profile.status_tag_icon ?? 'dot',
+      status_tag_custom_label: profile.status_tag_custom_label ?? null,
     }).eq('id', profile.id);
     setSaving(false);
     setSaved(true);
@@ -1159,6 +1338,126 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
         </div>
       )}
 
+      {/* ── Tag de status ─────────────────────────────────────────── */}
+      {profile.status_tag_enabled && profile.status_tag && (() => {
+        const tag = STATUS_TAGS.find(t => t.id === profile.status_tag)!;
+        if (!tag) return null;
+        return (
+          <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[#333333]">Tag de status</h3>
+              <StatusTagDisplay tag={tag} profile={profile} previewSize="sm" />
+            </div>
+
+            {/* Cor do texto */}
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-[#555]">Cor do texto</span>
+              <div className="flex items-center gap-3">
+                <input type="color"
+                  value={profile.status_tag_color ?? tag.color}
+                  onChange={e => update('status_tag_color', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5"
+                />
+                <button onClick={() => update('status_tag_color', tag.color)}
+                  className="text-xs text-[#BFBFBF] hover:text-[#555] transition-colors">
+                  Restaurar padrão
+                </button>
+              </div>
+            </div>
+
+            {/* Cor do fundo */}
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-[#555]">Cor do fundo</span>
+              <div className="flex items-center gap-3">
+                <input type="color"
+                  value={profile.status_tag_bg
+                    ? profile.status_tag_bg.startsWith('rgba')
+                      ? tag.color
+                      : profile.status_tag_bg
+                    : tag.color}
+                  onChange={e => update('status_tag_bg', e.target.value + '26')}
+                  className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5"
+                />
+                <button onClick={() => update('status_tag_bg', tag.bg)}
+                  className="text-xs text-[#BFBFBF] hover:text-[#555] transition-colors">
+                  Restaurar padrão
+                </button>
+              </div>
+            </div>
+
+            {/* Tamanho */}
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-[#555]">Tamanho</span>
+              <div className="flex gap-2">
+                {STATUS_TAG_SIZES.map(s => {
+                  const active = (profile.status_tag_size ?? 'md') === s.id;
+                  return (
+                    <button key={s.id} onClick={() => update('status_tag_size', s.id)}
+                      className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-colors ${
+                        active ? 'border-[#0B76A0] bg-[#e8f4f8] text-[#0B76A0]' : 'border-[#E8E8E8] text-[#888] hover:border-[#BFBFBF]'
+                      }`}>
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Ícone */}
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-[#555]">Ícone</span>
+              <div className="flex flex-wrap gap-2">
+                {STATUS_TAG_ICONS.map(ic => {
+                  const active = (profile.status_tag_icon ?? 'dot') === ic.id;
+                  return (
+                    <button key={ic.id} onClick={() => update('status_tag_icon', ic.id)}
+                      className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center text-base transition-colors ${
+                        active ? 'border-[#0B76A0] bg-[#e8f4f8]' : 'border-[#E8E8E8] hover:border-[#BFBFBF]'
+                      }`}>
+                      {ic.id === 'dot'
+                        ? <span className="w-2.5 h-2.5 rounded-full bg-[#0B76A0]" />
+                        : ic.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Fonte */}
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-[#555]">Fonte</span>
+              <select
+                value={profile.status_tag_font ?? ''}
+                onChange={e => update('status_tag_font', e.target.value)}
+                className="w-full px-3 py-2.5 text-sm border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0] bg-white"
+              >
+                <option value="">Padrão do perfil</option>
+                {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+              </select>
+            </div>
+
+            {/* Posição */}
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-[#555]">Posição</span>
+              <div className="grid grid-cols-1 gap-2">
+                {STATUS_TAG_POSITIONS.map(pos => {
+                  const active = (profile.status_tag_position ?? 'above-left') === pos.id;
+                  return (
+                    <button key={pos.id} onClick={() => update('status_tag_position', pos.id)}
+                      className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-colors ${
+                        active ? 'border-[#0B76A0] bg-[#e8f4f8] text-[#0B76A0]' : 'border-[#E8E8E8] text-[#555] hover:border-[#BFBFBF]'
+                      }`}>
+                      <span className="font-medium">{pos.label}</span>
+                      <span className="text-xs opacity-60">{pos.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <button
         onClick={handleSave}
         disabled={saving}
@@ -1212,7 +1511,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
     const customTheme = customThemes.find(t => t.id === themeId);
     if (!theme && !customTheme) return;
 
-    const isPro = theme ? isThemePro(themeConfigs, themeId, theme) : (customTheme?.is_pro ?? false);
+    const isPro = theme ? isThemePro(themeConfigs, themeId, theme) : (customTheme!.media_type === 'video');
     const isLocked = !canUseTheme(isPro, profile.plan ?? 'free');
 
     const defaults = theme
@@ -1327,32 +1626,39 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                       style={{ aspectRatio: '3/4' }}
                     >
                       {/* Card body */}
-                      <div
-                        className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
-                        style={theme.previewStyle as React.CSSProperties}
-                      >
-                        {/* "Aa" typography sample */}
-                        <span
-                          className="font-bold leading-none select-none"
-                          style={{
-                            fontSize: 'clamp(22px, 6vw, 30px)',
-                            color: d.text_color,
-                            fontFamily: `'${d.font_family}', sans-serif`,
-                          }}
-                        >
-                          Aa
-                        </span>
-
-                        {/* Mini button */}
-                        <div
-                          className="w-4/5"
-                          style={{
-                            height: '18px',
-                            backgroundColor: d.button_color,
-                            borderRadius: btnRadius,
-                          }}
+                      {themeConfigs[theme.id]?.preview_url ? (
+                        <img
+                          src={themeConfigs[theme.id]!.preview_url}
+                          className="absolute inset-0 w-full h-full object-cover"
                         />
-                      </div>
+                      ) : (
+                        <div
+                          className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
+                          style={theme.previewStyle as React.CSSProperties}
+                        >
+                          {/* "Aa" typography sample */}
+                          <span
+                            className="font-bold leading-none select-none"
+                            style={{
+                              fontSize: 'clamp(22px, 6vw, 30px)',
+                              color: d.text_color,
+                              fontFamily: `'${d.font_family}', sans-serif`,
+                            }}
+                          >
+                            Aa
+                          </span>
+
+                          {/* Mini button */}
+                          <div
+                            className="w-4/5"
+                            style={{
+                              height: '18px',
+                              backgroundColor: d.button_color,
+                              borderRadius: btnRadius,
+                            }}
+                          />
+                        </div>
+                      )}
 
                       {/* PRO badge */}
                       {isPro && (
@@ -1400,16 +1706,17 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         );
       })}
 
-      {/* ── Temas personalizados ── */}
-      {customThemes.length > 0 && (
+      {/* ── Temas estáticos (imagem) ── */}
+      {customThemes.filter(t => t.media_type === 'image').length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#BFBFBF]">Personalizados</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#BFBFBF]">Estáticos</span>
             <div className="flex-1 h-px bg-[#E8E8E8]" />
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-3 gap-y-4">
-            {customThemes.map(theme => {
-              const locked = theme.is_pro && !canUseTheme(theme.is_pro, profile.plan ?? 'free');
+            {customThemes.filter(t => t.media_type === 'image').map(theme => {
+              const isVideoPro = false;
+              const locked = isVideoPro && !canUseTheme(isVideoPro, profile.plan ?? 'free');
               const isPreviewing = previewThemeId === theme.id;
               const isSelected = !previewThemeId
                 ? profile.theme_id === theme.id
@@ -1430,15 +1737,78 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                     }`}
                     style={{ aspectRatio: '3/4' }}
                   >
-                    {theme.media_type === 'video'
-                      ? <video src={theme.media_url} muted autoPlay loop playsInline className="absolute inset-0 w-full h-full object-cover" />
-                      : <img src={theme.media_url} className="absolute inset-0 w-full h-full object-cover" />
-                    }
-                    {theme.is_pro && (
-                      <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-400 text-[8px] font-black text-black leading-tight shadow">
-                        PRO
+                    <img src={theme.media_url} className="absolute inset-0 w-full h-full object-cover" />
+                    {locked && !isPreviewing && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/25 rounded-2xl">
+                        <span className="text-lg">🔒</span>
                       </div>
                     )}
+                    {isPreviewing && (
+                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shadow">
+                        <Eye className="w-3 h-3 text-black" />
+                      </div>
+                    )}
+                    {isSelected && !locked && (
+                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </button>
+                  <p className={`text-[11px] text-center leading-tight truncate w-full ${
+                    isPreviewing ? 'font-semibold text-amber-600' :
+                    isSelected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'
+                  }`}>
+                    {theme.name}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Temas de vídeo ── */}
+      {customThemes.filter(t => t.media_type === 'video').length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#BFBFBF]">Vídeo</span>
+            <div className="flex-1 h-px bg-[#E8E8E8]" />
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-3 gap-y-4">
+            {customThemes.filter(t => t.media_type === 'video').map(theme => {
+              const isVideoPro = true; // vídeos sempre PRO
+              const locked = isVideoPro && !canUseTheme(isVideoPro, profile.plan ?? 'free');
+              const isPreviewing = previewThemeId === theme.id;
+              const isSelected = !previewThemeId
+                ? profile.theme_id === theme.id
+                : originalProfileRef.current?.theme_id === theme.id;
+              return (
+                <div key={theme.id} className="flex flex-col items-center gap-1.5">
+                  <button
+                    onClick={() => handleSelect(theme.id)}
+                    title={theme.description}
+                    className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 focus:outline-none ${
+                      isPreviewing
+                        ? 'ring-2 ring-amber-400 ring-offset-2 shadow-lg scale-[1.04]'
+                        : isSelected
+                        ? 'ring-2 ring-[#0B76A0] ring-offset-2 shadow-lg scale-[1.04]'
+                        : locked && !isPreviewing
+                        ? 'opacity-60 hover:opacity-80 hover:scale-[1.03] ring-1 ring-black/10'
+                        : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-black/10'
+                    }`}
+                    style={{ aspectRatio: '3/4' }}
+                  >
+                    {theme.thumbnail_url
+                      ? <img src={theme.thumbnail_url} className="absolute inset-0 w-full h-full object-cover" />
+                      : <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: theme.preview_color }} />
+                    }
+                    {/* Ícone de play — indica que é vídeo */}
+                    <div className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow pointer-events-none">
+                      <span className="text-[8px] leading-none pl-px">▶</span>
+                    </div>
+                    <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-400 text-[8px] font-black text-black leading-tight shadow">
+                      PRO
+                    </div>
                     {locked && !isPreviewing && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/25 rounded-2xl">
                         <span className="text-lg">🔒</span>

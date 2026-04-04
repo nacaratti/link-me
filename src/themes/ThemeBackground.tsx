@@ -18,10 +18,11 @@ interface Props {
   Background?: ComponentType;
   mediaUrl?: string;
   mediaType?: 'image' | 'video';
+  thumbnailUrl?: string;
   themeId: string;
 }
 
-export default function ThemeBackground({ Background, mediaUrl, mediaType, themeId }: Props) {
+export default function ThemeBackground({ Background, mediaUrl, mediaType, thumbnailUrl, themeId }: Props) {
   if (mediaUrl) {
     if (mediaType === 'video') {
       return (
@@ -32,6 +33,8 @@ export default function ThemeBackground({ Background, mediaUrl, mediaType, theme
           loop
           muted
           playsInline
+          preload="none"
+          poster={thumbnailUrl}
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           style={{ zIndex: 0 }}
         />

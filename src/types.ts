@@ -53,6 +53,40 @@ export function getButtonRadius(style?: string): string {
   return BUTTON_STYLE_OPTIONS.find(o => o.value === style)?.radius ?? '14px';
 }
 
+export const STATUS_TAGS = [
+  { id: 'open_to_work',       label: 'Open to Work',       color: '#16a34a', bg: 'rgba(22,163,74,0.12)'   },
+  { id: 'open_to_collab',     label: 'Open to Collab',     color: '#6366f1', bg: 'rgba(99,102,241,0.12)'  },
+  { id: 'available',          label: 'Available',           color: '#0891b2', bg: 'rgba(8,145,178,0.12)'   },
+  { id: 'hiring',             label: 'Hiring',              color: '#9333ea', bg: 'rgba(147,51,234,0.12)'  },
+  { id: 'researching',        label: 'Researching',         color: '#d97706', bg: 'rgba(217,119,6,0.12)'   },
+  { id: 'building_in_public', label: 'Building in Public',  color: '#db2777', bg: 'rgba(219,39,119,0.12)'  },
+] as const;
+
+export type StatusTagId = typeof STATUS_TAGS[number]['id'];
+
+export const STATUS_TAG_SIZES = [
+  { id: 'sm', label: 'P'    },
+  { id: 'md', label: 'M'    },
+  { id: 'lg', label: 'G'    },
+] as const;
+
+export const STATUS_TAG_POSITIONS = [
+  { id: 'above-left',   label: 'Esquerda',  desc: 'Acima dos links'  },
+  { id: 'above-center', label: 'Centro',    desc: 'Acima dos links'  },
+  { id: 'above-right',  label: 'Direita',   desc: 'Acima dos links'  },
+  { id: 'fixed-tl',     label: 'Esq. fixo', desc: 'Canto da tela'   },
+  { id: 'fixed-tr',     label: 'Dir. fixo', desc: 'Canto da tela'   },
+] as const;
+
+export const STATUS_TAG_ICONS = [
+  { id: 'dot',  label: '●'  },
+  { id: '⚡',   label: '⚡'  },
+  { id: '🔥',   label: '🔥'  },
+  { id: '🚀',   label: '🚀'  },
+  { id: '✦',    label: '✦'  },
+  { id: '💼',   label: '💼'  },
+] as const;
+
 export interface Link {
   id: number;
   profile_id: string;
@@ -95,4 +129,13 @@ export interface Profile {
   whatsapp_icon_color?: string;
   whatsapp_size?: 'normal' | 'large';
   whatsapp_animation?: 'none' | 'pulse' | 'bounce' | 'shake';
+  status_tag?: string | null;
+  status_tag_enabled?: boolean;
+  status_tag_color?: string | null;
+  status_tag_bg?: string | null;
+  status_tag_size?: string;
+  status_tag_position?: string;
+  status_tag_font?: string | null;
+  status_tag_icon?: string;
+  status_tag_custom_label?: string | null;
 }

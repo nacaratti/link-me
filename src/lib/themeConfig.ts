@@ -4,6 +4,7 @@ import type { ThemeDefinition } from '../themes/types';
 export interface ThemeConfig {
   id: string;
   is_pro: boolean;
+  preview_url?: string;
 }
 
 // Cache em memória — invalidado quando admin altera
@@ -11,7 +12,7 @@ let _cache: Record<string, ThemeConfig> | null = null;
 
 export async function fetchThemeConfigs(): Promise<Record<string, ThemeConfig>> {
   if (_cache) return _cache;
-  const { data } = await supabase.from('theme_config').select('id, is_pro');
+  const { data } = await supabase.from('theme_config').select('id, is_pro, preview_url');
   if (data) {
     _cache = Object.fromEntries(data.map((t: ThemeConfig) => [t.id, t]));
   }
