@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
-import AdaptiveLogo from './AdaptiveLogo';
+import ConstellationBackground from './ConstellationBackground';
+
+// ─── Same dark palette as LandingPage ─────────────────────────────────────────
+const C = {
+  black:    '#000000',
+  white:    '#e7e9ea',
+  blue:     '#1c9cf0',
+  blueDim:  'rgba(28,156,240,0.12)',
+  blueGlow: 'rgba(28,156,240,0.25)',
+  gray1:    '#17181c',
+  gray2:    '#242628',
+  gray3:    '#061216',
+  muted:    '#72767a',
+};
 
 export default function AuthPage() {
   const location = useLocation();
@@ -56,7 +68,7 @@ export default function AuthPage() {
         });
 
         if (signUpError) throw signUpError;
-        setMessage('Conta criada! Verifique seu email para confirmar, ou entre agora se a confirmação estiver desativada.');
+        setMessage('Conta criada! Verifique seu email para confirmar.');
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
@@ -86,9 +98,7 @@ export default function AuthPage() {
     setLoading(true);
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (oauthError) {
       setError(oauthError.message);
@@ -96,56 +106,154 @@ export default function AuthPage() {
     }
   }
 
+  // ── Shared input style ──────────────────────────────────────────────────────
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '11px 14px',
+    background: 'rgba(255,255,255,0.05)',
+    border: `1px solid ${C.gray2}`,
+    borderRadius: 10,
+    outline: 'none',
+    fontSize: 14,
+    color: C.white,
+    fontFamily: "'Open Sans', sans-serif",
+    transition: 'border-color 0.2s',
+    boxSizing: 'border-box',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: 13,
+    fontWeight: 600,
+    color: C.white,
+    marginBottom: 6,
+    fontFamily: "'Open Sans', sans-serif",
+  };
+
   return (
-    <div className="min-h-screen bg-muted flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center">
-            <AdaptiveLogo className="h-30 w-auto" />
-          </div>
-          <p className="text-muted-foreground text-sm">Seus links em um só lugar</p>
+    <div style={{
+      minHeight: '100vh',
+      background: C.black,
+      color: C.white,
+      fontFamily: "'Open Sans', sans-serif",
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px 16px',
+    }}>
+      {/* Background */}
+      <ConstellationBackground opacity={0.45} />
+
+      {/* Card */}
+      <div style={{
+        position: 'relative',
+        zIndex: 1,
+        width: '100%',
+        maxWidth: 420,
+      }}>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <Link to="/" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <img src="/logo_white.png" alt="linqu.es" style={{ height: 48, width: 'auto' }} />
+            <img src="/nome_white.png" alt="linqu.es" style={{ height: 20, width: 'auto', opacity: 0.85 }} />
+          </Link>
+          <p style={{ fontSize: 13, color: C.muted, marginTop: 8 }}>Seus links em um só lugar</p>
         </div>
 
-        <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
-          <div className="flex gap-1 bg-muted rounded-lg p-1 mb-6">
-            <button
-              onClick={() => { setMode('login'); setError(null); setMessage(null); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'login' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Entrar
-            </button>
-            <button
-              onClick={() => { setMode('register'); setError(null); setMessage(null); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'register' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Criar conta
-            </button>
+        {/* Form card */}
+        <div style={{
+          background: 'rgba(23,24,28,0.82)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: `1px solid ${C.gray2}`,
+          borderRadius: 20,
+          padding: '32px 28px',
+        }}>
+          {/* Tab switcher */}
+          <div style={{
+            display: 'flex',
+            gap: 4,
+            background: 'rgba(255,255,255,0.05)',
+            borderRadius: 10,
+            padding: 4,
+            marginBottom: 28,
+          }}>
+            {(['login', 'register'] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => { setMode(m); setError(null); setMessage(null); }}
+                style={{
+                  flex: 1,
+                  padding: '9px 0',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: "'Open Sans', sans-serif",
+                  transition: 'background 0.2s, color 0.2s',
+                  background: mode === m ? C.gray2 : 'transparent',
+                  color: mode === m ? C.white : C.muted,
+                }}
+              >
+                {m === 'login' ? 'Entrar' : 'Criar conta'}
+              </button>
+            ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {mode === 'register' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Nome de exibição</label>
+                  <label style={labelStyle}>Nome de exibição</label>
                   <input
                     type="text"
                     value={displayName}
                     onChange={e => setDisplayName(e.target.value)}
                     placeholder="Seu nome completo"
-                    className="w-full px-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-ring outline-none text-sm bg-input text-foreground placeholder:text-muted-foreground"
+                    style={inputStyle}
+                    onFocus={e => (e.currentTarget.style.borderColor = C.blue)}
+                    onBlur={e => (e.currentTarget.style.borderColor = C.gray2)}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Username</label>
-                  <div className="flex items-center border border-border rounded-lg focus-within:ring-2 focus-within:ring-ring overflow-hidden">
-                    <span className="px-3 py-2.5 bg-muted text-muted-foreground text-sm border-r border-border whitespace-nowrap">linqu.es/</span>
+                  <label style={labelStyle}>Username</label>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    border: `1px solid ${C.gray2}`,
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                    transition: 'border-color 0.2s',
+                  }}
+                    onFocusCapture={e => (e.currentTarget.style.borderColor = C.blue)}
+                    onBlurCapture={e => (e.currentTarget.style.borderColor = C.gray2)}
+                  >
+                    <span style={{
+                      padding: '11px 12px',
+                      background: 'rgba(255,255,255,0.04)',
+                      color: C.muted,
+                      fontSize: 13,
+                      fontFamily: "'Open Sans', sans-serif",
+                      borderRight: `1px solid ${C.gray2}`,
+                      whiteSpace: 'nowrap',
+                    }}>linqu.es/</span>
                     <input
                       type="text"
                       value={username}
                       onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
                       placeholder="seuusername"
-                      className="flex-1 px-3 py-2.5 outline-none text-sm bg-transparent text-foreground placeholder:text-muted-foreground"
+                      style={{
+                        ...inputStyle,
+                        border: 'none',
+                        borderRadius: 0,
+                        background: 'transparent',
+                        flex: 1,
+                        width: 'auto',
+                      }}
                       required
                       minLength={3}
                       maxLength={30}
@@ -156,58 +264,118 @@ export default function AuthPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Email</label>
+              <label style={labelStyle}>Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="w-full px-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-ring outline-none text-sm bg-input text-foreground placeholder:text-muted-foreground"
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = C.blue)}
+                onBlur={e => (e.currentTarget.style.borderColor = C.gray2)}
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Senha</label>
+              <label style={labelStyle}>Senha</label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
-                className="w-full px-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-ring outline-none text-sm bg-input text-foreground placeholder:text-muted-foreground"
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = C.blue)}
+                onBlur={e => (e.currentTarget.style.borderColor = C.gray2)}
                 required
                 minLength={6}
               />
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 dark:bg-red-950 dark:border-red-900 dark:text-red-400">{error}</div>
+              <div style={{
+                padding: '10px 14px',
+                background: 'rgba(244,33,46,0.1)',
+                border: '1px solid rgba(244,33,46,0.3)',
+                borderRadius: 10,
+                fontSize: 13,
+                color: '#f87171',
+                fontFamily: "'Open Sans', sans-serif",
+              }}>{error}</div>
             )}
             {message && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 dark:bg-green-950 dark:border-green-900 dark:text-green-400">{message}</div>
+              <div style={{
+                padding: '10px 14px',
+                background: 'rgba(0,184,122,0.1)',
+                border: '1px solid rgba(0,184,122,0.3)',
+                borderRadius: 10,
+                fontSize: 13,
+                color: '#34d399',
+                fontFamily: "'Open Sans', sans-serif",
+              }}>{message}</div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/85 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+              style={{
+                width: '100%',
+                padding: '13px 0',
+                background: C.blue,
+                border: 'none',
+                borderRadius: 10,
+                color: '#fff',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontFamily: "'Open Sans', sans-serif",
+                opacity: loading ? 0.6 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                transition: 'opacity 0.2s, transform 0.15s',
+              }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.88'; }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.opacity = '1'; }}
             >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {loading && <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />}
               {mode === 'login' ? 'Entrar' : 'Criar conta'}
             </button>
           </form>
 
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">ou</span>
-            <div className="flex-1 h-px bg-border" />
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+            <div style={{ flex: 1, height: 1, background: C.gray2 }} />
+            <span style={{ fontSize: 12, color: C.muted }}>ou</span>
+            <div style={{ flex: 1, height: 1, background: C.gray2 }} />
           </div>
 
+          {/* Google */}
           <button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full py-2.5 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50 flex items-center justify-center gap-3 text-sm font-medium text-foreground"
+            style={{
+              width: '100%',
+              padding: '12px 0',
+              background: 'rgba(255,255,255,0.04)',
+              border: `1px solid ${C.gray2}`,
+              borderRadius: 10,
+              color: C.white,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontFamily: "'Open Sans', sans-serif",
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              opacity: loading ? 0.5 : 1,
+              transition: 'background 0.2s, border-color 0.2s',
+            }}
+            onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = C.muted; } }}
+            onMouseLeave={e => { if (!loading) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = C.gray2; } }}
           >
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -220,13 +388,23 @@ export default function AuthPage() {
           </button>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        {/* Footer links */}
+        <p style={{ textAlign: 'center', fontSize: 12, color: C.muted, marginTop: 20, lineHeight: 1.6 }}>
           Ao continuar, você concorda com os nossos{' '}
-          <Link to="/termos" className="text-primary hover:underline">Termos de Serviço</Link>
+          <Link to="/termos" style={{ color: C.blue, textDecoration: 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
+            onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
+          >Termos de Serviço</Link>
           {' '}e{' '}
-          <Link to="/privacidade" className="text-primary hover:underline">Política de Privacidade</Link>.
+          <Link to="/privacidade" style={{ color: C.blue, textDecoration: 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
+            onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
+          >Política de Privacidade</Link>.
         </p>
       </div>
+
+      {/* Spin keyframe for Loader2 */}
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

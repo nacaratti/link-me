@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { motion, useInView, AnimatePresence } from 'motion/react';
+import ConstellationBackground from './ConstellationBackground';
 
 // ─── Palette (always dark — matches dark theme tokens) ───────────────────────
 const C = {
@@ -135,14 +136,23 @@ function Nav({ onCTA }: { onCTA: () => void }) {
 
 // ─── Phone Mockup ─────────────────────────────────────────────────────────────
 function PhoneMockup() {
-  const links = ['Portfolio', 'GitHub', 'LinkedIn', 'Dribbble', 'Newsletter'];
+  const links = ['Portfolio', 'GitHub', 'LinkedIn'];
+
+  // Aurora Boreal theme — cores reais do sistema
+  const bg         = '#030d1a';
+  const textColor  = '#d0fff0';
+  const mutedColor = '#6bbda0';
+  const btnColor   = 'rgba(0,200,120,0.18)';
+  const btnText    = '#a0ffd0';
+  const btnRadius  = '20px 4px'; // leaf
+
   return (
     <div style={{
       width: 220,
       height: 440,
-      background: '#0D0D0D',
+      background: bg,
       borderRadius: 36,
-      border: `2px solid ${C.gray3}`,
+      border: '2px solid rgba(255,255,255,0.07)',
       position: 'relative',
       overflow: 'hidden',
       boxShadow: `0 60px 120px rgba(0,0,0,0.7), 0 0 0 1px ${C.gray2}, inset 0 1px 0 rgba(255,255,255,0.05)`,
@@ -159,12 +169,12 @@ function PhoneMockup() {
         zIndex: 10,
       }} />
 
-      {/* Animated background glow */}
+      {/* Aurora glow */}
       <div style={{
         position: 'absolute',
-        top: -60, left: -60,
-        width: 280, height: 280,
-        background: 'radial-gradient(ellipse, rgba(28,156,240,0.08) 0%, transparent 70%)',
+        top: -40, left: -40,
+        width: 260, height: 260,
+        background: 'radial-gradient(ellipse, rgba(0,200,120,0.10) 0%, transparent 70%)',
         pointerEvents: 'none',
       }} />
 
@@ -180,58 +190,86 @@ function PhoneMockup() {
       }}>
         {/* Avatar */}
         <div style={{
-          width: 56,
-          height: 56,
+          width: 56, height: 56,
           borderRadius: '50%',
-          background: `linear-gradient(135deg, ${C.blue} 0%, #00E5FF 100%)`,
+          background: 'linear-gradient(135deg, #00c878 0%, #0099ff 100%)',
           marginBottom: 4,
-          boxShadow: `0 0 20px ${C.blueGlow}`,
+          boxShadow: '0 0 18px rgba(0,200,120,0.35)',
         }} />
 
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.white }}>Ana Oliveira</div>
-        <div style={{ fontSize: 10, color: C.muted, textAlign: 'center', lineHeight: 1.4 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: textColor, fontFamily: 'Raleway, sans-serif' }}>Ana Oliveira</div>
+        <div style={{ fontSize: 10, color: mutedColor, textAlign: 'center', lineHeight: 1.4, fontFamily: 'Raleway, sans-serif' }}>
           Design • Branding • UX
         </div>
 
         {/* Status tag */}
         <div style={{
-          background: 'rgba(28,156,240,0.12)',
-          border: `1px solid rgba(28,156,240,0.3)`,
+          background: 'rgba(22,163,74,0.12)',
+          border: '1px solid rgba(22,163,74,0.3)',
           borderRadius: 100,
           padding: '3px 10px',
           fontSize: 9,
-          color: C.blue,
+          color: '#ffffff',
           marginTop: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
         }}>
-          ● Open to Work
+          <span style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: '#16a34a',
+            display: 'inline-block',
+            animation: 'pulse-green 1.8s ease-in-out infinite',
+          }} />
+          Open to Work
         </div>
 
         {/* Links */}
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
           {links.map((name, i) => (
-            <motion.div
+            <div
               key={name}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 * i + 0.5, duration: 0.4 }}
               style={{
                 width: '100%',
                 padding: '9px 12px',
-                background: i === 0
-                  ? `linear-gradient(90deg, rgba(28,156,240,0.15), rgba(28,156,240,0.05))`
-                  : 'rgba(255,255,255,0.05)',
-                border: i === 0 ? `1px solid rgba(28,156,240,0.25)` : `1px solid rgba(255,255,255,0.07)`,
-                borderRadius: 12,
+                background: btnColor,
+                border: `1px solid rgba(0,200,120,${0.25 - i * 0.04})`,
+                opacity: 1 - i * 0.12,
+                borderRadius: btnRadius,
                 textAlign: 'center',
                 fontSize: 11,
-                fontWeight: 500,
-                color: i === 0 ? C.blue : C.white,
+                fontWeight: 600,
+                color: btnText,
+                fontFamily: 'Raleway, sans-serif',
               }}
             >
               {name}
-            </motion.div>
+            </div>
           ))}
         </div>
+      </div>
+
+      {/* Botão flutuante WhatsApp */}
+      <div style={{
+        position: 'absolute',
+        bottom: 18,
+        right: 14,
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        background: '#25D366',
+        boxShadow: '0 4px 14px rgba(37,211,102,0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        animation: 'pulse-green 2s ease-in-out infinite',
+        zIndex: 20,
+      }}>
+        {/* Ícone WhatsApp simplificado */}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.526 5.845L.057 23.428a.75.75 0 00.915.915l5.638-1.47A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.655-.502-5.187-1.381l-.372-.217-3.853 1.004 1.026-3.748-.235-.386A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+        </svg>
       </div>
     </div>
   );
@@ -251,29 +289,6 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
     }}>
       {/* Left */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            background: C.blueDim,
-            border: `1px solid rgba(28,156,240,0.25)`,
-            borderRadius: 100,
-            padding: '6px 14px',
-            fontSize: 12,
-            color: C.blue,
-            marginBottom: 24,
-            fontWeight: 500,
-          }}
-        >
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.blue, display: 'inline-block' }} />
-          Plataforma de links para criadores
-        </motion.div>
-
         {/* Headline */}
         <motion.h1
           initial={{ opacity: 0, y: 24 }}
@@ -355,7 +370,7 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
 
           <span style={{ fontSize: 13, color: C.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1L8.5 5H13L9.5 7.5L11 11.5L7 9L3 11.5L4.5 7.5L1 5H5.5L7 1Z" fill={C.blue} opacity="0.7" />
+              <path d="M7 1L8.5 5H13L9.5 7.5L11 11.5L7 9L3 11.5L4.5 7.5L1 5H5.5L7 1Z" fill="#FFD700" />
             </svg>
             100% gratuito • sem cartão
           </span>
@@ -373,7 +388,7 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
             alignItems: 'center',
             gap: 10,
             fontSize: 13,
-            color: C.muted,
+            color: C.white,
           }}
         >
           <div style={{
@@ -385,7 +400,7 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
             borderRadius: 100,
             padding: '8px 16px',
           }}>
-            <span style={{ color: C.muted }}>linqu.es/</span>
+            <span style={{ color: C.white }}>linqu.es/</span>
             <TypingText words={['anadesigner', 'joaodev', 'mariafoto', 'pedromusic', 'luizarq']} />
           </div>
           <span>← seu endereço único</span>
@@ -675,18 +690,19 @@ function FeaturesSection() {
 }
 
 // ─── Theme Showcase ───────────────────────────────────────────────────────────
-function ThemeShowcase() {
-  const themes = [
-    { name: 'Mercúrio Líquido', tag: 'WebGL', bg: 'radial-gradient(ellipse at 35% 65%,#2a1f2a 0%,#0a0a0a 100%)', accent: 'rgba(255,255,255,0.4)', textColor: '#f0f0f0' },
-    { name: 'Aurora Boreal',    tag: 'CSS',   bg: 'linear-gradient(135deg,#0d1b2a 0%,#1a472a 50%,#0d2b3a 100%)', accent: 'rgba(100,255,180,0.4)', textColor: '#e0ffe8' },
-    { name: 'Constelação',      tag: 'Canvas',bg: 'radial-gradient(ellipse at 20% 30%, #0a0a1a 0%, #050508 100%)', accent: 'rgba(150,180,255,0.4)', textColor: '#c8d8ff' },
-    { name: 'Laser',            tag: 'Canvas',bg: 'linear-gradient(160deg,#0a0005 0%,#1a0010 100%)', accent: 'rgba(255,50,100,0.4)', textColor: '#ffd0d8' },
-    { name: 'Quantum Sphere',   tag: 'WebGL', bg: 'radial-gradient(ellipse at 60% 40%, #001533 0%, #000816 100%)', accent: 'rgba(0,200,255,0.4)', textColor: '#b0e8ff' },
-    { name: 'Bolhas',           tag: 'Canvas',bg: 'linear-gradient(135deg,#e8f4f8 0%,#d0e8f0 100%)', accent: 'rgba(0,120,180,0.35)', textColor: '#1a3a4a' },
-    { name: 'Dourado',          tag: 'Canvas',bg: 'linear-gradient(135deg,#1a0f00 0%,#2a1800 100%)', accent: 'rgba(255,200,50,0.5)', textColor: '#ffe8b0' },
-    { name: 'Elegância',        tag: 'Pro',   bg: 'linear-gradient(160deg,#f5f0eb 0%,#e8e0d8 100%)', accent: 'rgba(80,40,20,0.35)', textColor: '#2a1a0a' },
-  ];
+// 8 temas reais — thumbnail como fundo, accent/btnRadius dos dados reais do sistema
+const SHOWCASE_THEMES = [
+  { name: 'Treliça de Cristal', tag: 'PRO',   img: '/temas/cristal.png',     accent: 'rgba(0,242,255,0.45)',   btnRadius: '6px',       textColor: '#00f2ff' },
+  { name: 'Aurora Boreal',    tag: 'Animado', img: '/temas/aurora.png',      accent: 'rgba(0,200,120,0.50)',   btnRadius: '20px 4px',  textColor: '#d0fff0' },
+  { name: 'Constelação',      tag: 'Canvas',  img: '/temas/constelacao.png', accent: 'rgba(150,180,255,0.50)', btnRadius: '9999px',    textColor: '#c8d8ff' },
+  { name: 'Fluxo Dourado',    tag: 'Canvas',  img: '/temas/fluxo.png',       accent: 'rgba(255,180,50,0.55)',  btnRadius: '20px 4px',  textColor: '#ffd080' },
+  { name: 'Esfera Quântica',  tag: 'Animado', img: '/temas/esfera.png',      accent: 'rgba(255,255,255,0.18)', btnRadius: '9999px',    textColor: '#ffffff' },
+  { name: 'Void',             tag: 'Animado', img: '/temas/void.png',        accent: 'rgba(165,180,252,0.35)', btnRadius: '6px',       textColor: '#e0e7ff' },
+  { name: 'Laser',            tag: 'Animado', img: '/temas/laser.png',       accent: 'rgba(0,255,255,0.35)',   btnRadius: '0px 16px',  textColor: '#ffffff' },
+  { name: 'Vagalumes',        tag: 'Canvas',  img: '/temas/vagalumes.png',   accent: 'rgba(100,255,100,0.40)', btnRadius: '6px',       textColor: '#c8ffcc' },
+];
 
+function ThemeShowcase() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
 
@@ -711,14 +727,16 @@ function ThemeShowcase() {
             gap: 12,
           }}
         >
-          {themes.map((t, i) => (
+          {SHOWCASE_THEMES.map((t, i) => (
             <motion.div
               key={t.name}
               initial={{ opacity: 0, scale: 0.94 }}
               animate={inView ? { opacity: 1, scale: 1 } : {}}
               transition={{ duration: 0.5, delay: i * 0.06 }}
               style={{
-                background: t.bg,
+                backgroundImage: `url(${t.img})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center top',
                 borderRadius: 16,
                 padding: '28px 20px',
                 height: 180,
@@ -737,8 +755,11 @@ function ThemeShowcase() {
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
+              {/* Overlay para legibilidade */}
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)', pointerEvents: 'none' }} />
+
               {/* Mini profile preview */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: '50%',
                   background: t.accent,
@@ -746,14 +767,15 @@ function ThemeShowcase() {
                 }} />
                 <div style={{ width: 60, height: 4, borderRadius: 4, background: t.accent }} />
                 <div style={{ width: 40, height: 3, borderRadius: 4, background: t.accent, opacity: 0.5 }} />
-                <div style={{ width: 100, height: 22, borderRadius: 6, background: t.accent, marginTop: 4 }} />
-                <div style={{ width: 100, height: 22, borderRadius: 6, background: t.accent, opacity: 0.6 }} />
+                <div style={{ width: 100, height: 22, borderRadius: t.btnRadius, background: t.accent, marginTop: 4 }} />
+                <div style={{ width: 100, height: 22, borderRadius: t.btnRadius, background: t.accent, opacity: 0.6 }} />
               </div>
 
               {/* Tags */}
               <div style={{
                 position: 'absolute',
                 bottom: 12, left: 12, right: 12,
+                zIndex: 1,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-end',
@@ -771,11 +793,11 @@ function ThemeShowcase() {
                   fontWeight: 700,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase' as const,
-                  background: t.tag === 'Pro' ? 'rgba(28,156,240,0.2)' : 'rgba(255,255,255,0.1)',
-                  color: t.tag === 'Pro' ? C.blue : t.textColor,
+                  background: 'rgba(255,255,255,0.1)',
+                  color: t.textColor,
                   padding: '3px 7px',
                   borderRadius: 100,
-                  border: t.tag === 'Pro' ? `1px solid rgba(28,156,240,0.3)` : `1px solid rgba(255,255,255,0.15)`,
+                  border: `1px solid rgba(255,255,255,0.15)`,
                 }}>
                   {t.tag}
                 </span>
@@ -1131,6 +1153,7 @@ export default function LandingPage() {
       style.id = 'landing-styles-v1';
       style.textContent = `
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes pulse-green { 0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,0.7)} 50%{box-shadow:0 0 0 4px rgba(22,163,74,0)} }
         @media (max-width: 767px) {
           .lp-nav { padding: 12px 20px !important; }
           .lp-nav-login { display: none !important; }
@@ -1153,10 +1176,10 @@ export default function LandingPage() {
     }
   }, []);
 
-  // Three.js Particle Constellation
+  // Three.js Particle Constellation — REMOVE_START
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvas_UNUSED = null;
+    if (!canvas_UNUSED) return;
 
     const isMobile    = window.innerWidth < 768;
     const PARTICLES   = isMobile ? 80 : 170;
@@ -1312,17 +1335,7 @@ export default function LandingPage() {
 
   return (
     <div style={S.page}>
-      {/* Three.js background */}
-      <canvas ref={canvasRef} style={S.canvas} />
-
-      {/* Radial vignette over canvas */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 0,
-        pointerEvents: 'none',
-        background: 'radial-gradient(ellipse at center, transparent 40%, rgba(7,7,7,0.6) 100%)',
-      }} />
+      <ConstellationBackground />
 
       {/* Scrollable content */}
       <div style={S.content}>
