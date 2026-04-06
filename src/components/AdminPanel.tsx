@@ -7,7 +7,7 @@ import { invalidateThemeConfigCache } from '../lib/themeConfig';
 import { fetchCustomThemes, invalidateCustomThemeCache, type CustomTheme } from '../lib/customThemes';
 import { FONT_OPTIONS, BUTTON_STYLE_OPTIONS } from '../types';
 import { Loader2, Users, ShieldCheck, ArrowLeft, ToggleLeft, ToggleRight, Crown, Plus, Trash2, Image, Video, Pencil, X, Check } from 'lucide-react';
-import logo from '../assets/images/logo.png';
+import AdaptiveLogo from './AdaptiveLogo';
 
 interface AdminProfile {
   id: string;
@@ -385,8 +385,8 @@ export default function AdminPanel() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0B76A0]" />
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -394,16 +394,16 @@ export default function AdminPanel() {
   if (!authorized) return null;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <header className="bg-white border-b border-[#D9D9D9] px-6 py-4 flex items-center gap-4">
-        <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-[#f5f5f5] rounded-xl transition-colors">
-          <ArrowLeft className="w-5 h-5 text-[#555555]" />
+      <header className="bg-card border-b border-border px-6 py-4 flex items-center gap-4">
+        <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-muted rounded-xl transition-colors">
+          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </button>
-        <img src={logo} alt="linqu.es" className="h-8 w-auto" />
+        <AdaptiveLogo className="h-8 w-auto" />
         <div className="flex items-center gap-2 ml-2">
-          <ShieldCheck className="w-4 h-4 text-[#0B76A0]" />
-          <span className="text-sm font-semibold text-[#000000]">Painel Admin</span>
+          <ShieldCheck className="w-4 h-4 text-primary" />
+          <span className="text-sm font-semibold text-foreground">Painel Admin</span>
         </div>
       </header>
 
@@ -411,28 +411,28 @@ export default function AdminPanel() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Total de usuários', value: totalUsers, icon: Users, color: 'text-[#0B76A0]', bg: 'bg-[#e8f4f8]' },
+            { label: 'Total de usuários', value: totalUsers, icon: Users, color: 'text-primary', bg: 'bg-accent' },
             { label: 'Plano PRO',         value: proUsers,   icon: Crown,  color: 'text-amber-600', bg: 'bg-amber-50' },
-            { label: 'Plano Free',        value: freeUsers,  icon: Users,  color: 'text-[#555555]', bg: 'bg-[#f5f5f5]' },
+            { label: 'Plano Free',        value: freeUsers,  icon: Users,  color: 'text-muted-foreground', bg: 'bg-muted' },
           ].map(stat => (
-            <div key={stat.label} className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm">
+            <div key={stat.label} className="bg-card rounded-2xl border border-border p-5 shadow-sm">
               <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
                 <stat.icon className={`w-5 h-5 ${stat.color}`} />
               </div>
-              <p className="text-2xl font-bold text-[#000000]">{stat.value}</p>
-              <p className="text-xs text-[#BFBFBF] mt-0.5">{stat.label}</p>
+              <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
             </div>
           ))}
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-[#ebebeb] rounded-xl p-1">
+        <div className="flex gap-1 bg-muted rounded-xl p-1">
           {(['users', 'themes'] as const).map(t => (
             <button
               key={t}
               onClick={() => setActiveTab(t)}
               className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeTab === t ? 'bg-white shadow text-[#000000]' : 'text-[#BFBFBF] hover:text-[#555555]'
+                activeTab === t ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-muted-foreground'
               }`}
             >
               {t === 'users' ? 'Usuários' : 'Temas'}
@@ -442,43 +442,39 @@ export default function AdminPanel() {
 
         {/* Users tab */}
         {activeTab === 'users' && (
-          <div className="bg-white rounded-2xl border border-[#D9D9D9] shadow-sm overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-[#f5f5f5] border-b border-[#D9D9D9]">
+              <thead className="bg-muted border-b border-border">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#BFBFBF] uppercase tracking-wider">Usuário</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#BFBFBF] uppercase tracking-wider">Links</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#BFBFBF] uppercase tracking-wider">Criado em</th>
-                  <th className="text-center px-4 py-3 text-xs font-semibold text-[#BFBFBF] uppercase tracking-wider">Plano</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Usuário</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Links</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Criado em</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Plano</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D9D9D9]">
+              <tbody className="divide-y divide-border">
                 {profiles.map(p => (
-                  <tr key={p.id} className="hover:bg-[#f5f5f5] transition-colors">
+                  <tr key={p.id} className="hover:bg-muted transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div>
-                          <p className="font-medium text-[#000000]">{p.display_name || p.username}</p>
-                          <p className="text-xs text-[#BFBFBF]">@{p.username}</p>
+                          <p className="font-medium text-foreground">{p.display_name || p.username}</p>
+                          <p className="text-xs text-muted-foreground">@{p.username}</p>
                         </div>
                         {p.role === 'admin' && (
-                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-[#0B76A0] text-white leading-tight">ADMIN</span>
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-primary text-white leading-tight">ADMIN</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[#555555]">{p.link_count}</td>
-                    <td className="px-4 py-3 text-[#BFBFBF]">
+                    <td className="px-4 py-3 text-muted-foreground">{p.link_count}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
                       {new Date(p.created_at).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => togglePlan(p)}
                         disabled={saving === p.id || p.role === 'admin'}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
-                        style={{
-                          background: p.plan === 'pro' ? '#fef3c7' : '#f5f5f5',
-                          color: p.plan === 'pro' ? '#92400e' : '#555555',
-                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${p.plan === 'pro' ? 'bg-amber-100 text-amber-800' : 'bg-muted text-muted-foreground'}`}
                       >
                         {saving === p.id
                           ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -499,12 +495,12 @@ export default function AdminPanel() {
           <div className="space-y-4">
 
             {/* ── Temas personalizados ── */}
-            <div className="bg-white rounded-2xl border border-[#D9D9D9] shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-[#D9D9D9] bg-[#f5f5f5]">
-                <span className="text-xs font-semibold text-[#BFBFBF] uppercase tracking-wider">Temas personalizados</span>
+            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Temas personalizados</span>
                 <button
                   onClick={() => { setShowForm(v => !v); setUploadError(null); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0B76A0] text-white text-xs font-medium rounded-lg hover:bg-[#095f7d] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary/85 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Criar tema
@@ -513,10 +509,10 @@ export default function AdminPanel() {
 
               {/* Formulário de criação */}
               {showForm && (
-                <div className="p-5 border-b border-[#D9D9D9] space-y-4 bg-[#fafafa]">
+                <div className="p-5 border-b border-border space-y-4 bg-muted">
                   {/* Upload de mídia principal */}
                   <div className="space-y-2">
-                    <span className="text-xs font-medium text-[#555]">Imagem ou vídeo de fundo *</span>
+                    <span className="text-xs font-medium text-muted-foreground">Imagem ou vídeo de fundo *</span>
                     <input
                       ref={mediaInputRef}
                       type="file"
@@ -525,7 +521,7 @@ export default function AdminPanel() {
                       onChange={handleMediaPick}
                     />
                     {mediaPreview ? (
-                      <div className="relative w-full h-40 rounded-xl overflow-hidden border border-[#D9D9D9]">
+                      <div className="relative w-full h-40 rounded-xl overflow-hidden border border-border">
                         {mediaType === 'video'
                           ? <video src={mediaPreview} autoPlay loop muted playsInline className="w-full h-full object-cover" />
                           : <img src={mediaPreview} className="w-full h-full object-cover" />
@@ -544,7 +540,7 @@ export default function AdminPanel() {
                     ) : (
                       <button
                         onClick={() => mediaInputRef.current?.click()}
-                        className="w-full h-24 border-2 border-dashed border-[#D9D9D9] rounded-xl text-sm text-[#888] hover:border-[#0B76A0] hover:text-[#0B76A0] transition-colors flex flex-col items-center justify-center gap-1"
+                        className="w-full h-24 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors flex flex-col items-center justify-center gap-1"
                       >
                         <span className="flex gap-3 text-xl">🖼️ 🎬</span>
                         <span>Clique para selecionar imagem ou vídeo</span>
@@ -554,7 +550,7 @@ export default function AdminPanel() {
 
                   {/* Upload de thumbnail (obrigatória para vídeo, opcional para imagem) */}
                   <div className="space-y-2">
-                    <span className="text-xs font-medium text-[#555]">
+                    <span className="text-xs font-medium text-muted-foreground">
                       Thumbnail {mediaType === 'video' ? '(recomendada para vídeo)' : '(opcional)'}
                     </span>
                     <input
@@ -565,7 +561,7 @@ export default function AdminPanel() {
                       onChange={handleThumbPick}
                     />
                     {thumbPreview ? (
-                      <div className="relative w-32 h-20 rounded-xl overflow-hidden border border-[#D9D9D9]">
+                      <div className="relative w-32 h-20 rounded-xl overflow-hidden border border-border">
                         <img src={thumbPreview} className="w-full h-full object-cover" />
                         <button
                           onClick={() => { setThumbFile(null); setThumbPreview(null); }}
@@ -575,33 +571,33 @@ export default function AdminPanel() {
                     ) : (
                       <button
                         onClick={() => thumbInputRef.current?.click()}
-                        className="w-32 h-20 border-2 border-dashed border-[#D9D9D9] rounded-xl text-xs text-[#888] hover:border-[#0B76A0] hover:text-[#0B76A0] transition-colors flex flex-col items-center justify-center gap-1"
+                        className="w-32 h-20 border-2 border-dashed border-border rounded-xl text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors flex flex-col items-center justify-center gap-1"
                       >
                         <Image className="w-4 h-4" />
                         <span>Thumbnail</span>
                       </button>
                     )}
-                    <p className="text-[10px] text-[#BFBFBF]">Exibida na galeria de temas no lugar do vídeo</p>
+                    <p className="text-[10px] text-muted-foreground">Exibida na galeria de temas no lugar do vídeo</p>
                   </div>
 
                   {/* Nome e descrição */}
                   <div className="grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-[#555]">Nome *</span>
+                      <span className="text-xs font-medium text-muted-foreground">Nome *</span>
                       <input
                         value={form.name}
                         onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                         placeholder="Ex: Praia"
-                        className="px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
+                        className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
                       />
                     </label>
                     <label className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-[#555]">Descrição</span>
+                      <span className="text-xs font-medium text-muted-foreground">Descrição</span>
                       <input
                         value={form.description}
                         onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                         placeholder="Breve descrição"
-                        className="px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
+                        className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
                       />
                     </label>
                   </div>
@@ -615,12 +611,12 @@ export default function AdminPanel() {
                       { key: 'button_text_color', label: 'Botão texto' },
                     ] as const).map(({ key, label }) => (
                       <label key={key} className="flex flex-col gap-1 items-center">
-                        <span className="text-[10px] font-medium text-[#555] text-center">{label}</span>
+                        <span className="text-[10px] font-medium text-muted-foreground text-center">{label}</span>
                         <input
                           type="color"
                           value={form[key].startsWith('rgba') ? '#ffffff' : form[key]}
                           onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                          className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5"
+                          className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5"
                         />
                       </label>
                     ))}
@@ -629,21 +625,21 @@ export default function AdminPanel() {
                   {/* Estilo do botão e fonte */}
                   <div className="grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-[#555]">Estilo do botão</span>
+                      <span className="text-xs font-medium text-muted-foreground">Estilo do botão</span>
                       <select
                         value={form.button_style}
                         onChange={e => setForm(f => ({ ...f, button_style: e.target.value }))}
-                        className="px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
+                        className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
                       >
                         {BUTTON_STYLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </label>
                     <label className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-[#555]">Fonte</span>
+                      <span className="text-xs font-medium text-muted-foreground">Fonte</span>
                       <select
                         value={form.font_family}
                         onChange={e => setForm(f => ({ ...f, font_family: e.target.value }))}
-                        className="px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
+                        className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
                       >
                         {FONT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
@@ -651,7 +647,7 @@ export default function AdminPanel() {
                   </div>
 
                   {/* PRO é determinado automaticamente pelo tipo de mídia */}
-                  <p className="text-xs text-[#888]">
+                  <p className="text-xs text-muted-foreground">
                     ℹ️ Vídeos são sempre PRO. Imagens são sempre Grátis.
                   </p>
 
@@ -667,14 +663,14 @@ export default function AdminPanel() {
                         setThumbFile(null);
                         setThumbPreview(null);
                       }}
-                      className="flex-1 py-2.5 border border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:bg-[#f5f5f5] transition-colors"
+                      className="flex-1 py-2.5 border border-border rounded-xl text-sm text-muted-foreground hover:bg-muted transition-colors"
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleCreateTheme}
                       disabled={uploading || !mediaFile || !form.name.trim()}
-                      className="flex-1 py-2.5 bg-[#0B76A0] text-white text-sm font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/85 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                     >
                       {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
                       {uploading ? 'Enviando…' : 'Criar tema'}
@@ -685,7 +681,7 @@ export default function AdminPanel() {
 
               {/* Lista de temas custom */}
               {customThemes.length === 0 && !showForm ? (
-                <p className="px-4 py-6 text-sm text-[#BFBFBF] text-center">Nenhum tema personalizado criado ainda.</p>
+                <p className="px-4 py-6 text-sm text-muted-foreground text-center">Nenhum tema personalizado criado ainda.</p>
               ) : (
                 <>
                 <input
@@ -696,13 +692,13 @@ export default function AdminPanel() {
                   onChange={handleEditThumbPick}
                 />
                 <table className="w-full text-sm">
-                  <tbody className="divide-y divide-[#D9D9D9]">
+                  <tbody className="divide-y divide-border">
                     {customThemes.map(theme => (
                       <React.Fragment key={theme.id}>
-                        <tr className="hover:bg-[#f5f5f5] transition-colors">
+                        <tr className="hover:bg-muted transition-colors">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-[#D9D9D9]">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-border">
                                 {theme.media_type === 'video'
                                   ? theme.thumbnail_url
                                     ? <img src={theme.thumbnail_url} className="w-full h-full object-cover" />
@@ -712,15 +708,15 @@ export default function AdminPanel() {
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium text-[#000000]">{theme.name}</p>
+                                  <p className="font-medium text-foreground">{theme.name}</p>
                                   {theme.is_pro && (
                                     <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[9px] font-black">PRO</span>
                                   )}
-                                  <span className="px-1.5 py-0.5 rounded-md bg-[#f0f0f0] text-[#888] text-[9px] font-medium uppercase">
+                                  <span className="px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground text-[9px] font-medium uppercase">
                                     {theme.media_type === 'video' ? 'Vídeo' : 'Imagem'}
                                   </span>
                                 </div>
-                                {theme.description && <p className="text-xs text-[#BFBFBF]">{theme.description}</p>}
+                                {theme.description && <p className="text-xs text-muted-foreground">{theme.description}</p>}
                               </div>
                             </div>
                           </td>
@@ -730,8 +726,8 @@ export default function AdminPanel() {
                                 onClick={() => editingId === theme.id ? closeEdit() : openEdit(theme)}
                                 className={`p-2 rounded-lg transition-colors ${
                                   editingId === theme.id
-                                    ? 'bg-[#e8f4f8] text-[#0B76A0]'
-                                    : 'text-[#BFBFBF] hover:text-[#0B76A0] hover:bg-[#e8f4f8]'
+                                    ? 'bg-accent text-primary'
+                                    : 'text-muted-foreground hover:text-primary hover:bg-accent'
                                 }`}
                               >
                                 <Pencil className="w-4 h-4" />
@@ -739,7 +735,7 @@ export default function AdminPanel() {
                               <button
                                 onClick={() => handleDeleteCustomTheme(theme)}
                                 disabled={saving === theme.id}
-                                className="p-2 text-[#BFBFBF] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                               >
                                 {saving === theme.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                               </button>
@@ -750,16 +746,16 @@ export default function AdminPanel() {
                         {/* Painel de edição inline */}
                         {editingId === theme.id && (
                           <tr>
-                            <td colSpan={2} className="px-4 py-4 bg-[#f8fafc] border-t border-[#e8f4f8]">
+                            <td colSpan={2} className="px-4 py-4 bg-card border-t border-border">
                               <div className="flex items-start gap-4">
                                 {/* Thumbnail atual / nova */}
                                 <div className="flex flex-col items-center gap-2">
-                                  <span className="text-[10px] font-medium text-[#555] uppercase tracking-wider">Thumbnail</span>
-                                  <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#D9D9D9] flex-shrink-0">
+                                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Thumbnail</span>
+                                  <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-border flex-shrink-0">
                                     {editThumbPreview
                                       ? <img src={editThumbPreview} className="w-full h-full object-cover" />
-                                      : <div className="w-full h-full flex items-center justify-center bg-[#f0f0f0]">
-                                          <Image className="w-5 h-5 text-[#BFBFBF]" />
+                                      : <div className="w-full h-full flex items-center justify-center bg-muted">
+                                          <Image className="w-5 h-5 text-muted-foreground" />
                                         </div>
                                     }
                                     {editThumbFile && (
@@ -770,7 +766,7 @@ export default function AdminPanel() {
                                   </div>
                                   <button
                                     onClick={() => editThumbInputRef.current?.click()}
-                                    className="text-[10px] text-[#0B76A0] hover:underline whitespace-nowrap"
+                                    className="text-[10px] text-primary hover:underline whitespace-nowrap"
                                   >
                                     {editThumbPreview ? 'Trocar imagem' : 'Selecionar imagem'}
                                   </button>
@@ -782,12 +778,12 @@ export default function AdminPanel() {
                                     <p className="text-xs text-red-500">{editError}</p>
                                   )}
                                   {!editThumbFile && (
-                                    <p className="text-xs text-[#BFBFBF]">Selecione uma nova imagem de thumbnail para substituir a atual.</p>
+                                    <p className="text-xs text-muted-foreground">Selecione uma nova imagem de thumbnail para substituir a atual.</p>
                                   )}
                                   <div className="flex gap-2">
                                     <button
                                       onClick={closeEdit}
-                                      className="flex items-center gap-1.5 px-3 py-2 border border-[#D9D9D9] rounded-xl text-xs text-[#555] hover:bg-[#f5f5f5] transition-colors"
+                                      className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-xl text-xs text-muted-foreground hover:bg-muted transition-colors"
                                     >
                                       <X className="w-3.5 h-3.5" />
                                       Cancelar
@@ -795,7 +791,7 @@ export default function AdminPanel() {
                                     <button
                                       onClick={() => handleSaveEdit(theme)}
                                       disabled={editSaving || !editThumbFile}
-                                      className="flex items-center gap-1.5 px-3 py-2 bg-[#0B76A0] text-white text-xs font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
+                                      className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white text-xs font-medium rounded-xl hover:bg-primary/85 disabled:opacity-50 transition-colors"
                                     >
                                       {editSaving
                                         ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -818,9 +814,9 @@ export default function AdminPanel() {
             </div>
 
             {/* ── Temas do sistema ── */}
-            <div className="bg-white rounded-2xl border border-[#D9D9D9] shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#D9D9D9] bg-[#f5f5f5]">
-                <span className="text-xs font-semibold text-[#BFBFBF] uppercase tracking-wider">Temas do sistema</span>
+            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-border bg-muted">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Temas do sistema</span>
               </div>
               <input
                 ref={editPreviewInputRef}
@@ -830,25 +826,25 @@ export default function AdminPanel() {
                 onChange={handleEditPreviewPick}
               />
               <table className="w-full text-sm">
-                <tbody className="divide-y divide-[#D9D9D9]">
+                <tbody className="divide-y divide-border">
                   {THEMES.map(theme => {
                     const config = themeConfigs.find(t => t.id === theme.id);
                     const isPro = config?.is_pro ?? false;
                     const previewUrl = config?.preview_url;
                     return (
                       <React.Fragment key={theme.id}>
-                        <tr className="hover:bg-[#f5f5f5] transition-colors">
+                        <tr className="hover:bg-muted transition-colors">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden border border-[#D9D9D9]">
-                                {previewUrl
-                                  ? <img src={previewUrl} className="w-full h-full object-cover" />
+                              <div className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden border border-border">
+                                {theme.thumbnail
+                                  ? <img src={theme.thumbnail} className="w-full h-full object-cover" />
                                   : <div className="w-full h-full" style={theme.previewStyle as React.CSSProperties} />
                                 }
                               </div>
                               <div>
-                                <p className="font-medium text-[#000000]">{theme.name}</p>
-                                <p className="text-xs text-[#BFBFBF]">{theme.description}</p>
+                                <p className="font-medium text-foreground">{theme.name}</p>
+                                <p className="text-xs text-muted-foreground">{theme.description}</p>
                               </div>
                             </div>
                           </td>
@@ -858,8 +854,8 @@ export default function AdminPanel() {
                                 onClick={() => editPreviewId === theme.id ? closeEditPreview() : openEditPreview(theme.id, previewUrl)}
                                 className={`p-2 rounded-lg transition-colors ${
                                   editPreviewId === theme.id
-                                    ? 'bg-[#e8f4f8] text-[#0B76A0]'
-                                    : 'text-[#BFBFBF] hover:text-[#0B76A0] hover:bg-[#e8f4f8]'
+                                    ? 'bg-accent text-primary'
+                                    : 'text-muted-foreground hover:text-primary hover:bg-accent'
                                 }`}
                               >
                                 <Pencil className="w-4 h-4" />
@@ -867,11 +863,7 @@ export default function AdminPanel() {
                               <button
                                 onClick={() => toggleThemePro(theme.id, isPro)}
                                 disabled={saving === theme.id}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
-                                style={{
-                                  background: isPro ? '#fef3c7' : '#f5f5f5',
-                                  color: isPro ? '#92400e' : '#555555',
-                                }}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${isPro ? 'bg-amber-100 text-amber-800' : 'bg-muted text-muted-foreground'}`}
                               >
                                 {saving === theme.id
                                   ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -885,11 +877,11 @@ export default function AdminPanel() {
 
                         {editPreviewId === theme.id && (
                           <tr>
-                            <td colSpan={2} className="px-4 py-4 bg-[#f8fafc] border-t border-[#e8f4f8]">
+                            <td colSpan={2} className="px-4 py-4 bg-card border-t border-border">
                               <div className="flex items-start gap-4">
                                 <div className="flex flex-col items-center gap-2">
-                                  <span className="text-[10px] font-medium text-[#555] uppercase tracking-wider">Preview</span>
-                                  <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#D9D9D9] flex-shrink-0">
+                                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Preview</span>
+                                  <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-border flex-shrink-0">
                                     {editPreviewFilePreview
                                       ? <img src={editPreviewFilePreview} className="w-full h-full object-cover" />
                                       : <div className="w-full h-full" style={theme.previewStyle as React.CSSProperties} />
@@ -902,7 +894,7 @@ export default function AdminPanel() {
                                   </div>
                                   <button
                                     onClick={() => editPreviewInputRef.current?.click()}
-                                    className="text-[10px] text-[#0B76A0] hover:underline whitespace-nowrap"
+                                    className="text-[10px] text-primary hover:underline whitespace-nowrap"
                                   >
                                     {editPreviewFilePreview ? 'Trocar imagem' : 'Selecionar imagem'}
                                   </button>
@@ -911,12 +903,12 @@ export default function AdminPanel() {
                                 <div className="flex-1 flex flex-col justify-between gap-3 pt-5">
                                   {editPreviewError && <p className="text-xs text-red-500">{editPreviewError}</p>}
                                   {!editPreviewFile && (
-                                    <p className="text-xs text-[#BFBFBF]">Selecione uma imagem para substituir o preview gradiente do tema.</p>
+                                    <p className="text-xs text-muted-foreground">Selecione uma imagem para substituir o preview gradiente do tema.</p>
                                   )}
                                   <div className="flex gap-2">
                                     <button
                                       onClick={closeEditPreview}
-                                      className="flex items-center gap-1.5 px-3 py-2 border border-[#D9D9D9] rounded-xl text-xs text-[#555] hover:bg-[#f5f5f5] transition-colors"
+                                      className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-xl text-xs text-muted-foreground hover:bg-muted transition-colors"
                                     >
                                       <X className="w-3.5 h-3.5" />
                                       Cancelar
@@ -924,7 +916,7 @@ export default function AdminPanel() {
                                     <button
                                       onClick={() => handleSaveThemePreview(theme.id, previewUrl)}
                                       disabled={editPreviewSaving || !editPreviewFile}
-                                      className="flex items-center gap-1.5 px-3 py-2 bg-[#0B76A0] text-white text-xs font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
+                                      className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white text-xs font-medium rounded-xl hover:bg-primary/85 disabled:opacity-50 transition-colors"
                                     >
                                       {editPreviewSaving
                                         ? <Loader2 className="w-3.5 h-3.5 animate-spin" />

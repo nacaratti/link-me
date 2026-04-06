@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
-import logo from '../assets/images/logo.png';
+import AdaptiveLogo from './AdaptiveLogo';
 
 export default function AuthPage() {
   const location = useLocation();
@@ -60,7 +60,6 @@ export default function AuthPage() {
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
-        // redirecionamento via AuthContext + App.tsx
       }
     } catch (err: any) {
       const msg = err?.message || '';
@@ -73,7 +72,6 @@ export default function AuthPage() {
         mode === 'register' &&
         (code === '23505' || msg.includes('duplicate') || msg.includes('unique') || msg.includes('Database error'))
       ) {
-        // Unique constraint violation: two users registered the same username simultaneously
         setError('Username já está em uso. Escolha outro.');
       } else {
         setError(msg || 'Ocorreu um erro. Tente novamente.');
@@ -96,30 +94,29 @@ export default function AuthPage() {
       setError(oauthError.message);
       setLoading(false);
     }
-    // Supabase redireciona para o Google — loading fica true até sair da página
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center">
-          <img src={logo} alt="linqu.es" className="h-30 w-auto" />
+            <AdaptiveLogo className="h-30 w-auto" />
           </div>
-          <p className="text-[#BFBFBF] text-sm">Seus links em um só lugar</p>
+          <p className="text-muted-foreground text-sm">Seus links em um só lugar</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-[#D9D9D9] p-8">
-          <div className="flex gap-1 bg-[#ebebeb] rounded-lg p-1 mb-6">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
+          <div className="flex gap-1 bg-muted rounded-lg p-1 mb-6">
             <button
               onClick={() => { setMode('login'); setError(null); setMessage(null); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'login' ? 'bg-white shadow text-[#000000]' : 'text-[#BFBFBF] hover:text-[#333333]'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'login' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Entrar
             </button>
             <button
               onClick={() => { setMode('register'); setError(null); setMessage(null); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'register' ? 'bg-white shadow text-[#000000]' : 'text-[#BFBFBF] hover:text-[#333333]'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'register' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Criar conta
             </button>
@@ -129,26 +126,26 @@ export default function AuthPage() {
             {mode === 'register' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-[#333333] mb-1">Nome de exibição</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Nome de exibição</label>
                   <input
                     type="text"
                     value={displayName}
                     onChange={e => setDisplayName(e.target.value)}
                     placeholder="Seu nome completo"
-                    className="w-full px-4 py-2.5 border border-[#D9D9D9] rounded-lg focus:ring-2 focus:ring-[#0B76A0] outline-none text-sm"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-ring outline-none text-sm bg-input text-foreground placeholder:text-muted-foreground"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#333333] mb-1">Username</label>
-                  <div className="flex items-center border border-[#D9D9D9] rounded-lg focus-within:ring-2 focus-within:ring-[#0B76A0] overflow-hidden">
-                    <span className="px-3 py-2.5 bg-[#f5f5f5] text-[#BFBFBF] text-sm border-r border-[#D9D9D9] whitespace-nowrap">linqu.es/</span>
+                  <label className="block text-sm font-medium text-foreground mb-1">Username</label>
+                  <div className="flex items-center border border-border rounded-lg focus-within:ring-2 focus-within:ring-ring overflow-hidden">
+                    <span className="px-3 py-2.5 bg-muted text-muted-foreground text-sm border-r border-border whitespace-nowrap">linqu.es/</span>
                     <input
                       type="text"
                       value={username}
                       onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
                       placeholder="seuusername"
-                      className="flex-1 px-3 py-2.5 outline-none text-sm"
+                      className="flex-1 px-3 py-2.5 outline-none text-sm bg-transparent text-foreground placeholder:text-muted-foreground"
                       required
                       minLength={3}
                       maxLength={30}
@@ -159,41 +156,41 @@ export default function AuthPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-[#333333] mb-1">Email</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="w-full px-4 py-2.5 border border-[#D9D9D9] rounded-lg focus:ring-2 focus:ring-[#0B76A0] outline-none text-sm"
+                className="w-full px-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-ring outline-none text-sm bg-input text-foreground placeholder:text-muted-foreground"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#333333] mb-1">Senha</label>
+              <label className="block text-sm font-medium text-foreground mb-1">Senha</label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
-                className="w-full px-4 py-2.5 border border-[#D9D9D9] rounded-lg focus:ring-2 focus:ring-[#0B76A0] outline-none text-sm"
+                className="w-full px-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-ring outline-none text-sm bg-input text-foreground placeholder:text-muted-foreground"
                 required
                 minLength={6}
               />
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 dark:bg-red-950 dark:border-red-900 dark:text-red-400">{error}</div>
             )}
             {message && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">{message}</div>
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 dark:bg-green-950 dark:border-green-900 dark:text-green-400">{message}</div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-[#0B76A0] text-white font-semibold rounded-lg hover:bg-[#095f7d] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+              className="w-full py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/85 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {mode === 'login' ? 'Entrar' : 'Criar conta'}
@@ -201,16 +198,16 @@ export default function AuthPage() {
           </form>
 
           <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-[#D9D9D9]" />
-            <span className="text-xs text-[#BFBFBF]">ou</span>
-            <div className="flex-1 h-px bg-[#D9D9D9]" />
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground">ou</span>
+            <div className="flex-1 h-px bg-border" />
           </div>
 
           <button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full py-2.5 border border-[#D9D9D9] rounded-lg hover:bg-[#f5f5f5] transition-colors disabled:opacity-50 flex items-center justify-center gap-3 text-sm font-medium text-[#333333]"
+            className="w-full py-2.5 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50 flex items-center justify-center gap-3 text-sm font-medium text-foreground"
           >
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -223,11 +220,11 @@ export default function AuthPage() {
           </button>
         </div>
 
-        <p className="text-center text-xs text-[#BFBFBF] mt-6">
+        <p className="text-center text-xs text-muted-foreground mt-6">
           Ao continuar, você concorda com os nossos{' '}
-          <Link to="/termos" className="text-[#0B76A0] hover:underline">Termos de Serviço</Link>
+          <Link to="/termos" className="text-primary hover:underline">Termos de Serviço</Link>
           {' '}e{' '}
-          <Link to="/privacidade" className="text-[#0B76A0] hover:underline">Política de Privacidade</Link>.
+          <Link to="/privacidade" className="text-primary hover:underline">Política de Privacidade</Link>.
         </p>
       </div>
     </div>

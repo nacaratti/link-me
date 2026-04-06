@@ -9,6 +9,8 @@ import UsernameSetup from './components/UsernameSetup';
 import AuthCallback from './components/AuthCallback';
 import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import LandingPage from './components/LandingPage';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { Loader2 } from 'lucide-react';
 
 function Spinner() {
@@ -43,6 +45,14 @@ function SetupRoute() {
   return <UsernameSetup />;
 }
 
+function HomeRoute() {
+  const { user, loading, hasUsername } = useAuth();
+  if (loading) return <Spinner />;
+  if (user && hasUsername) return <Navigate to="/dashboard" replace />;
+  if (user && !hasUsername) return <Navigate to="/setup" replace />;
+  return <LandingPage />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -54,17 +64,19 @@ function AppRoutes() {
       <Route path="/termos" element={<TermsOfService />} />
       <Route path="/privacidade" element={<PrivacyPolicy />} />
       <Route path="/:username" element={<PublicProfile />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<HomeRoute />} />
     </Routes>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -56,6 +56,7 @@ export const THEMES: ThemeDefinition[] = [
     },
     Background: MercuryBackground,
     isWebGL: true,
+    thumbnail: '/temas/mercurio.png',
   },
   {
     id: 'quantum',
@@ -69,6 +70,7 @@ export const THEMES: ThemeDefinition[] = [
     },
     Background: QuantumBackground,
     isWebGL: true,
+    thumbnail: '/temas/esfera.png',
   },
   {
     id: 'wavefield',
@@ -83,6 +85,7 @@ export const THEMES: ThemeDefinition[] = [
     Background: WaveFieldBackground,
     isWebGL: true,
     isPro: true,
+    thumbnail: '/temas/grade.png',
   },
   {
     id: 'fractal',
@@ -97,6 +100,7 @@ export const THEMES: ThemeDefinition[] = [
     Background: FractalBackground,
     isWebGL: true,
     isPro: true,
+    thumbnail: '/temas/pulso.png',
   },
   {
     id: 'scanlines',
@@ -111,6 +115,7 @@ export const THEMES: ThemeDefinition[] = [
     Background: ScanLinesBackground,
     isWebGL: true,
     isPro: true,
+    thumbnail: '/temas/torus.png',
   },
   {
     id: 'crystal',
@@ -125,6 +130,7 @@ export const THEMES: ThemeDefinition[] = [
     Background: CrystalBackground,
     isWebGL: true,
     isPro: true,
+    thumbnail: '/temas/cristal.png',
   },
   {
     id: 'laser',
@@ -137,6 +143,7 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'wave', font_family: 'Orbitron',
     },
     Background: LaserBackground,
+    thumbnail: '/temas/laser.png',
   },
   {
     id: 'void',
@@ -150,6 +157,7 @@ export const THEMES: ThemeDefinition[] = [
     },
     Background: VoidBackground,
     isWebGL: true,
+    thumbnail: '/temas/void.png',
   },
 
   // ── CSS ────────────────────────────────────────────────────────────────────
@@ -164,6 +172,7 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'leaf', font_family: 'Raleway',
     },
     Background: AuroraBackground,
+    thumbnail: '/temas/aurora.png',
   },
   // ── Canvas 2D ──────────────────────────────────────────────────────────────
   {
@@ -177,6 +186,7 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'pill', font_family: 'Space Grotesk',
     },
     Background: ConstellationBackground,
+    thumbnail: '/temas/constelacao.png',
   },
   {
     id: 'ripple',
@@ -189,6 +199,7 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'wave', font_family: 'Josefin Sans',
     },
     Background: RippleBackground,
+    thumbnail: '/temas/lago.png',
   },
   {
     id: 'flow',
@@ -201,6 +212,7 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'leaf', font_family: 'Raleway',
     },
     Background: FlowBackground,
+    thumbnail: '/temas/fluxo.png',
   },
   {
     id: 'fireflies',
@@ -213,6 +225,7 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'soft', font_family: 'Nunito',
     },
     Background: FirefliesBackground,
+    thumbnail: '/temas/vagalumes.png',
   },
   // ── Profissões ──────────────────────────────────────────────────────────────
   {
@@ -305,6 +318,7 @@ export const THEMES: ThemeDefinition[] = [
       button_style: 'pill', font_family: 'Fredoka One',
     },
     Background: BubblesBackground,
+    thumbnail: '/temas/bolhas.png',
   },
 ];
 

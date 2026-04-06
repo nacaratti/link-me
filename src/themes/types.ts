@@ -17,4 +17,6 @@ export interface ThemeDefinition {
   group?: 'static' | 'animated';
   /** Marks theme as PRO in the local definition — used as fallback when DB config is absent */
   isPro?: boolean;
+  /** Path to local thumbnail image (relative to /public), e.g. '/temas/mercurio.png' */
+  thumbnail?: string;
 }

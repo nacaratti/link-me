@@ -11,7 +11,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { ICON_MAP, FONT_OPTIONS, BUTTON_STYLE_OPTIONS, getButtonRadius, STATUS_TAGS, STATUS_TAG_SIZES, STATUS_TAG_POSITIONS, STATUS_TAG_ICONS, type Profile, type Link } from '../types';
 import { THEMES, getTheme } from '../themes';
 import ThemeBackground from '../themes/ThemeBackground';
-import logo from '../assets/images/logo.png';
+import AdaptiveLogo from './AdaptiveLogo';
+import { useTheme } from '../contexts/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 import { linkLimitReached, linkBlockMessage, canUseTheme } from '../lib/plans';
 import { fetchThemeConfigs, isThemePro, invalidateThemeConfigCache, type ThemeConfig } from '../lib/themeConfig';
 import { fetchCustomThemes, type CustomTheme } from '../lib/customThemes';
@@ -77,26 +79,26 @@ function StatusTagCard({ profile, onProfileChange }: { profile: Profile; onProfi
   const enabled = profile.status_tag_enabled ?? false;
 
   return (
-    <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+    <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-[#333333]">Tag de status</h3>
-          <p className="text-xs text-[#BFBFBF] mt-0.5">Aparece acima dos links no seu perfil</p>
+          <h3 className="text-sm font-semibold text-foreground">Tag de status</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Aparece acima dos links no seu perfil</p>
         </div>
         <button
           type="button"
           onClick={handleToggle}
           disabled={saving}
           style={{ touchAction: 'manipulation' }}
-          className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${enabled ? 'bg-[#0B76A0]' : 'bg-[#D9D9D9]'}`}
+          className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${enabled ? 'bg-primary' : 'bg-[#D9D9D9]'}`}
         >
-          <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${enabled ? 'left-[22px]' : 'left-0.5'}`} />
+          <span className={`absolute top-0.5 w-5 h-5 bg-card rounded-full shadow transition-all ${enabled ? 'left-[22px]' : 'left-0.5'}`} />
         </button>
       </div>
 
       {enabled && (
         <div className="space-y-3">
-          <p className="text-[10px] font-semibold text-[#BFBFBF] uppercase tracking-wider">Escolha o status</p>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Escolha o status</p>
           <div className="flex flex-wrap gap-2">
             {STATUS_TAGS.map(tag => {
               const active = profile.status_tag === tag.id;
@@ -121,7 +123,7 @@ function StatusTagCard({ profile, onProfileChange }: { profile: Profile; onProfi
           </div>
           {/* Texto customizado */}
           <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold text-[#BFBFBF] uppercase tracking-wider">Texto personalizado</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Texto personalizado</p>
             <div className="relative">
               <input
                 type="text"
@@ -133,15 +135,15 @@ function StatusTagCard({ profile, onProfileChange }: { profile: Profile; onProfi
                   const val = e.target.value.trim() || null;
                   await supabase.from('profiles').update({ status_tag_custom_label: val }).eq('id', profile.id);
                 }}
-                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0] pr-10"
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring pr-10"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#BFBFBF]">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
                 {(profile.status_tag_custom_label ?? '').length}/28
               </span>
             </div>
-            <p className="text-[10px] text-[#BFBFBF]">Deixe vazio para usar o texto padrão</p>
+            <p className="text-[10px] text-muted-foreground">Deixe vazio para usar o texto padrão</p>
           </div>
-          <p className="text-[10px] text-[#BFBFBF]">Personalize cor, tamanho e posição na aba <strong>Aparência</strong></p>
+          <p className="text-[10px] text-muted-foreground">Personalize cor, tamanho e posição na aba <strong>Aparência</strong></p>
         </div>
       )}
     </div>
@@ -352,7 +354,7 @@ function MobilePreview({ profile }: { profile: Profile }) {
                     ...btnBorderStyle,
                   }}
                 >
-                  <div className="p-1 rounded-md bg-white/10">
+                  <div className="p-1 rounded-md bg-card/10">
                     <Icon className="w-3.5 h-3.5" />
                   </div>
                   <span className="font-medium text-xs">{link.title}</span>
@@ -469,14 +471,14 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   const addForm = (compact = false) => (
     <form onSubmit={handleAdd} className="space-y-3">
       <input
-        className="w-full px-4 py-3 text-base border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
+        className="w-full px-4 py-3 text-base border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring"
         placeholder="Título"
         value={newTitle}
         onChange={e => setNewTitle(e.target.value)}
         required
       />
       <input
-        className="w-full px-4 py-3 text-base border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
+        className="w-full px-4 py-3 text-base border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring"
         placeholder="URL (https://...)"
         type="url"
         value={newUrl}
@@ -485,7 +487,7 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
       />
       <div className={compact ? 'flex gap-2' : 'flex gap-2'}>
         <select
-          className="flex-1 px-4 py-3 text-base border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0] bg-white"
+          className="flex-1 px-4 py-3 text-base border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring bg-card"
           value={newIcon}
           onChange={e => setNewIcon(e.target.value)}
         >
@@ -496,7 +498,7 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         <button
           type="submit"
           disabled={adding}
-          className="flex items-center gap-2 px-5 py-3 bg-[#0B76A0] text-white text-base font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
+          className="flex items-center gap-2 px-5 py-3 bg-primary text-white text-base font-medium rounded-xl hover:bg-primary/85 disabled:opacity-50 transition-colors"
         >
           {adding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
           Adicionar
@@ -508,8 +510,8 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   return (
     <div className="space-y-6">
       {/* Inline form — desktop only */}
-      <div className="hidden md:block bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-3">
-        <h3 className="text-sm font-semibold text-[#333333]">Novo link</h3>
+      <div className="hidden md:block bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
+        <h3 className="text-sm font-semibold text-foreground">Novo link</h3>
         {blocked
           ? <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">{linkBlockMessage(profile.plan ?? 'free')}</p>
           : addForm()
@@ -523,27 +525,27 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
             <Reorder.Item
               key={link.id}
               value={link}
-              className="flex items-center gap-3 bg-white rounded-xl border border-[#D9D9D9] px-3 py-3 shadow-sm cursor-grab active:cursor-grabbing"
+              className="flex items-center gap-3 bg-card rounded-xl border border-border px-3 py-3 shadow-sm cursor-grab active:cursor-grabbing"
             >
-              <GripVertical className="w-5 h-5 text-[#BFBFBF] flex-shrink-0" />
-              <div className="p-1.5 rounded-lg bg-[#ebebeb]">
-                <Icon className="w-4 h-4 text-[#555555]" />
+              <GripVertical className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              <div className="p-1.5 rounded-lg bg-muted">
+                <Icon className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#111111] truncate">{link.title}</p>
-                <p className="text-xs text-[#BFBFBF] truncate">{link.url}</p>
+                <p className="text-sm font-medium text-foreground truncate">{link.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{link.url}</p>
               </div>
               <button
                 onClick={() => handleToggle(link)}
                 style={{ touchAction: 'manipulation' }}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-[#ebebeb] text-[#BFBFBF] hover:text-[#555555] transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors"
               >
                 {link.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
               <button
                 onClick={() => handleDelete(link.id)}
                 style={{ touchAction: 'manipulation' }}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-50 text-[#BFBFBF] hover:text-red-500 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -564,16 +566,16 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
       <StatusTagCard profile={profile} onProfileChange={onProfileChange} />
 
       {/* WhatsApp flutuante */}
-      <div className={`bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4 ${(profile.plan ?? 'free') !== 'pro' ? 'opacity-70' : ''}`}>
+      <div className={`bg-card rounded-2xl border border-border p-5 shadow-sm space-y-4 ${(profile.plan ?? 'free') !== 'pro' ? 'opacity-70' : ''}`}>
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-[#333333]">Botão flutuante do WhatsApp</h3>
+              <h3 className="text-sm font-semibold text-foreground">Botão flutuante do WhatsApp</h3>
               {(profile.plan ?? 'free') !== 'pro' && (
                 <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-[8px] font-black text-black leading-tight">PRO</span>
               )}
             </div>
-            <p className="text-xs text-[#BFBFBF] mt-0.5">Aparece no canto inferior direito do seu perfil</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Aparece no canto inferior direito do seu perfil</p>
           </div>
           {(profile.plan ?? 'free') === 'pro' ? (
             <button
@@ -586,7 +588,7 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
               aria-label="Ativar botão do WhatsApp"
             >
               <span
-                className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
+                className={`absolute top-0.5 w-5 h-5 bg-card rounded-full shadow transition-all ${
                   profile.whatsapp_enabled ? 'left-[22px]' : 'left-0.5'
                 }`}
               />
@@ -605,16 +607,16 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         {(profile.plan ?? 'free') === 'pro' && profile.whatsapp_enabled && (
           <form onSubmit={handleWaSave} className="space-y-3">
             <div>
-              <label className="text-xs font-medium text-[#555555] block mb-1.5">Número do WhatsApp</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Número do WhatsApp</label>
               <input
                 type="tel"
                 placeholder="+55 11 99999-9999"
                 value={waNumber}
                 onChange={e => setWaNumber(e.target.value)}
-                className="w-full px-4 py-3 text-base border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+                className="w-full px-4 py-3 text-base border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#25D366]"
                 required
               />
-              <p className="text-[11px] text-[#BFBFBF] mt-1">Com código do país, ex: +5511999999999</p>
+              <p className="text-[11px] text-muted-foreground mt-1">Com código do país, ex: +5511999999999</p>
             </div>
             <button
               type="submit"
@@ -633,7 +635,7 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         onClick={() => { if (!blocked) setShowSheet(true); }}
         disabled={blocked}
         style={{ touchAction: 'manipulation', bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
-        className="fixed right-4 z-40 md:hidden w-14 h-14 bg-[#0B76A0] hover:bg-[#095f7d] disabled:opacity-40 text-white rounded-full shadow-xl flex items-center justify-center transition-colors"
+        className="fixed right-4 z-40 md:hidden w-14 h-14 bg-primary hover:bg-primary/85 disabled:opacity-40 text-white rounded-full shadow-xl flex items-center justify-center transition-colors"
         aria-label="Adicionar link"
       >
         <Plus className="w-7 h-7" />
@@ -643,15 +645,15 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
       {showSheet && (
         <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowSheet(false)} />
-          <div className="relative bg-white rounded-t-3xl px-5 pt-4 shadow-2xl"
+          <div className="relative bg-card rounded-t-3xl px-5 pt-4 shadow-2xl"
             style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
           >
             <div className="w-10 h-1 bg-[#D9D9D9] rounded-full mx-auto mb-4" />
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-[#111111]">Novo link</h3>
+              <h3 className="text-base font-semibold text-foreground">Novo link</h3>
               <button
                 onClick={() => setShowSheet(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-[#ebebeb] text-[#BFBFBF]"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-muted text-muted-foreground"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -743,17 +745,17 @@ function BgPositionModal({ imageUrl, initialPosition, onConfirm, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4">
+      <div className="bg-card rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4">
         <div>
-          <h3 className="text-sm font-semibold text-[#111]">Reposicionar foto de fundo</h3>
-          <p className="text-xs text-[#BFBFBF] mt-0.5">Arraste para escolher o enquadramento</p>
+          <h3 className="text-sm font-semibold text-foreground">Reposicionar foto de fundo</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Arraste para escolher o enquadramento</p>
         </div>
 
         {/* Preview */}
         <div className="flex justify-center">
           <div
             ref={containerRef}
-            className="relative overflow-hidden rounded-2xl ring-2 ring-[#0B76A0] ring-offset-2"
+            className="relative overflow-hidden rounded-2xl ring-2 ring-ring ring-offset-2"
             style={{ width: 220, height: 390, cursor: dragging.current ? 'grabbing' : 'grab', touchAction: 'none' }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -768,8 +770,8 @@ function BgPositionModal({ imageUrl, initialPosition, onConfirm, onClose }: {
             />
             {/* crosshair */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-6 h-px bg-white/60" />
-              <div className="absolute w-px h-6 bg-white/60" />
+              <div className="w-6 h-px bg-card/60" />
+              <div className="absolute w-px h-6 bg-card/60" />
             </div>
           </div>
         </div>
@@ -777,30 +779,30 @@ function BgPositionModal({ imageUrl, initialPosition, onConfirm, onClose }: {
         {/* Sliders */}
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <span className="text-xs text-[#555] w-16 shrink-0">Horizontal</span>
+            <span className="text-xs text-muted-foreground w-16 shrink-0">Horizontal</span>
             <input type="range" min={0} max={100} value={Math.round(pos.x)}
               onChange={e => setPos(p => ({ ...p, x: parseInt(e.target.value) }))}
               className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
             />
-            <span className="text-xs font-mono text-[#555] w-8 text-right">{Math.round(pos.x)}%</span>
+            <span className="text-xs font-mono text-muted-foreground w-8 text-right">{Math.round(pos.x)}%</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-[#555] w-16 shrink-0">Vertical</span>
+            <span className="text-xs text-muted-foreground w-16 shrink-0">Vertical</span>
             <input type="range" min={0} max={100} value={Math.round(pos.y)}
               onChange={e => setPos(p => ({ ...p, y: parseInt(e.target.value) }))}
               className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
             />
-            <span className="text-xs font-mono text-[#555] w-8 text-right">{Math.round(pos.y)}%</span>
+            <span className="text-xs font-mono text-muted-foreground w-8 text-right">{Math.round(pos.y)}%</span>
           </div>
         </div>
 
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:bg-[#F5F5F5] transition-colors">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-border rounded-xl text-sm text-muted-foreground hover:bg-muted transition-colors">
             Cancelar
           </button>
           <button
             onClick={() => { onConfirm(`${Math.round(pos.x)}% ${Math.round(pos.y)}%`); onClose(); }}
-            className="flex-1 py-2.5 bg-[#0B76A0] rounded-xl text-sm text-white font-medium hover:bg-[#095f7d] transition-colors"
+            className="flex-1 py-2.5 bg-primary rounded-xl text-sm text-white font-medium hover:bg-primary/85 transition-colors"
           >
             Confirmar
           </button>
@@ -814,12 +816,12 @@ function FontPickerButton({ value, placeholder, onClick }: { value: string; plac
   return (
     <button
       onClick={onClick}
-      className="flex-1 flex items-center justify-between px-3 py-2.5 border-2 border-[#D9D9D9] rounded-xl hover:border-[#0B76A0] transition-colors text-left min-w-0"
+      className="flex-1 flex items-center justify-between px-3 py-2.5 border-2 border-border rounded-xl hover:border-primary transition-colors text-left min-w-0"
     >
-      <span className="text-sm text-[#111] truncate" style={{ fontFamily: `'${value}', sans-serif` }}>
+      <span className="text-sm text-foreground truncate" style={{ fontFamily: `'${value}', sans-serif` }}>
         {value || placeholder}
       </span>
-      <svg className="w-4 h-4 text-[#888] shrink-0 ml-2" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-muted-foreground shrink-0 ml-2" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
       </svg>
     </button>
@@ -917,22 +919,22 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
     <div className="space-y-6">
 
       {/* Fundo */}
-      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
-        <h3 className="text-sm font-semibold text-[#333333]">Fundo</h3>
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold text-foreground">Fundo</h3>
         <label className="flex flex-col gap-2 cursor-pointer">
-          <span className="text-xs font-medium text-[#555555]">Cor de fundo</span>
+          <span className="text-xs font-medium text-muted-foreground">Cor de fundo</span>
           <div className="flex items-center gap-2">
             <input
               type="color"
               value={profile.bg_color?.startsWith('#') ? profile.bg_color : '#ffffff'}
               onChange={e => update('bg_color', e.target.value)}
-              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+              className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 shrink-0"
             />
             <input
               type="text"
               value={profile.bg_color ?? ''}
               onChange={e => update('bg_color', e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
+              className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring font-mono min-w-0"
             />
           </div>
         </label>
@@ -940,9 +942,9 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
         {/* Foto de fundo — PRO */}
         {profile.plan === 'pro' ? (
           <div className="space-y-2">
-            <span className="text-xs font-medium text-[#555555]">Foto de fundo</span>
+            <span className="text-xs font-medium text-muted-foreground">Foto de fundo</span>
             {profile.bg_image_url && (
-              <div className="relative w-full h-24 rounded-xl overflow-hidden border border-[#D9D9D9]">
+              <div className="relative w-full h-24 rounded-xl overflow-hidden border border-border">
                 <img
                   src={profile.bg_image_url}
                   className="w-full h-full object-cover"
@@ -959,14 +961,14 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
               <button
                 onClick={() => bgFileInputRef.current?.click()}
                 disabled={uploadingBg}
-                className="flex-1 py-2 px-4 border-2 border-dashed border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:border-[#0B76A0] hover:text-[#0B76A0] transition-colors disabled:opacity-50"
+                className="flex-1 py-2 px-4 border-2 border-dashed border-border rounded-xl text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
               >
                 {uploadingBg ? 'Comprimindo…' : profile.bg_image_url ? 'Trocar foto' : 'Carregar foto de fundo'}
               </button>
               {profile.bg_image_url && (
                 <button
                   onClick={() => setBgPositionModal(true)}
-                  className="py-2 px-3 border-2 border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:border-[#0B76A0] hover:text-[#0B76A0] transition-colors"
+                  className="py-2 px-3 border-2 border-border rounded-xl text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
                 >
                   Reposicionar
                 </button>
@@ -994,12 +996,12 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
       </div>
 
       {/* Botões */}
-      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
-        <h3 className="text-sm font-semibold text-[#333333]">Botões</h3>
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold text-foreground">Botões</h3>
 
         {/* Formato */}
         <div className="space-y-2">
-          <span className="text-xs font-medium text-[#555]">Formato</span>
+          <span className="text-xs font-medium text-muted-foreground">Formato</span>
           <div className="grid grid-cols-3 gap-2">
             {BUTTON_STYLE_OPTIONS.map(opt => {
               const selected = profile.button_style === opt.value;
@@ -1008,7 +1010,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                   key={opt.value}
                   onClick={() => update('button_style', opt.value)}
                   className={`flex flex-col items-center gap-1.5 py-3 px-2 border-2 rounded-xl transition-colors ${
-                    selected ? 'border-[#0B76A0] bg-[#e8f4f8]' : 'border-[#E8E8E8] hover:border-[#BFBFBF]'
+                    selected ? 'border-primary bg-accent' : 'border-border hover:border-border'
                   }`}
                 >
                   {/* Mini botão visual */}
@@ -1019,7 +1021,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                       borderRadius: opt.radius,
                     }}
                   />
-                  <span className={`text-[10px] leading-tight ${selected ? 'text-[#095f7d] font-semibold' : 'text-[#666]'}`}>
+                  <span className={`text-[10px] leading-tight ${selected ? 'text-accent-foreground font-semibold' : 'text-muted-foreground'}`}>
                     {opt.label}
                   </span>
                 </button>
@@ -1030,64 +1032,64 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
         {/* Fundo dos botões */}
         <div className="space-y-2">
-          <span className="text-xs font-medium text-[#555]">Fundo</span>
+          <span className="text-xs font-medium text-muted-foreground">Fundo</span>
           <div className="flex items-center gap-2">
             <input
               type="color"
               value={btnHex}
               onChange={e => updateButtonColor(e.target.value, btnAlpha)}
-              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+              className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 shrink-0"
             />
             <input
               type="text"
               value={btnHex}
               onChange={e => { if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) updateButtonColor(e.target.value, btnAlpha); }}
-              className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
+              className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring font-mono min-w-0"
             />
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-[#555] shrink-0">Opacidade</span>
+            <span className="text-xs text-muted-foreground shrink-0">Opacidade</span>
             <input
               type="range" min={0} max={100}
               value={Math.round(btnAlpha * 100)}
               onChange={e => updateButtonColor(btnHex, parseInt(e.target.value) / 100)}
               className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
             />
-            <span className="text-xs font-mono text-[#555] w-8 text-right shrink-0">{Math.round(btnAlpha * 100)}%</span>
+            <span className="text-xs font-mono text-muted-foreground w-8 text-right shrink-0">{Math.round(btnAlpha * 100)}%</span>
           </div>
         </div>
 
         {/* Cor do texto dos botões */}
         <div className="space-y-2">
-          <span className="text-xs font-medium text-[#555]">Cor do texto</span>
+          <span className="text-xs font-medium text-muted-foreground">Cor do texto</span>
           <div className="flex items-center gap-2">
             <input
               type="color"
               value={profile.button_text_color?.startsWith('#') ? profile.button_text_color : '#ffffff'}
               onChange={e => update('button_text_color', e.target.value)}
-              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+              className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 shrink-0"
             />
             <input
               type="text"
               value={profile.button_text_color ?? ''}
               onChange={e => update('button_text_color', e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
+              className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring font-mono min-w-0"
             />
           </div>
         </div>
 
         {/* Borda */}
         <div className="space-y-2">
-          <span className="text-xs font-medium text-[#555]">Borda</span>
+          <span className="text-xs font-medium text-muted-foreground">Borda</span>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-[#555] shrink-0">Espessura</span>
+            <span className="text-xs text-muted-foreground shrink-0">Espessura</span>
             <input
               type="range" min={0} max={4}
               value={parseInt(profile.button_border_width ?? '0')}
               onChange={e => update('button_border_width', e.target.value)}
               className="flex-1 h-2 rounded-full accent-[#0B76A0] cursor-pointer"
             />
-            <span className="text-xs font-mono text-[#555] w-8 text-right shrink-0">
+            <span className="text-xs font-mono text-muted-foreground w-8 text-right shrink-0">
               {profile.button_border_width ?? '0'}px
             </span>
           </div>
@@ -1097,13 +1099,13 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                 type="color"
                 value={profile.button_border_color?.startsWith('#') ? profile.button_border_color : profile.button_text_color?.startsWith('#') ? profile.button_text_color : '#000000'}
                 onChange={e => update('button_border_color', e.target.value)}
-                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+                className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 shrink-0"
               />
               <input
                 type="text"
                 value={profile.button_border_color ?? ''}
                 onChange={e => update('button_border_color', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] font-mono min-w-0"
+                className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring font-mono min-w-0"
                 placeholder="Cor da borda"
               />
             </div>
@@ -1112,7 +1114,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
         {/* Fonte dos botões */}
         <div className="space-y-2">
-          <span className="text-xs font-medium text-[#555]">Fonte</span>
+          <span className="text-xs font-medium text-muted-foreground">Fonte</span>
           <div className="flex items-center gap-2">
             <FontPickerButton
               value={profile.button_font || profile.font_family}
@@ -1126,18 +1128,18 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
       </div>
 
       {/* Tipografia */}
-      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
-        <h3 className="text-sm font-semibold text-[#333333]">Tipografia</h3>
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold text-foreground">Tipografia</h3>
 
         {/* Título */}
         <div className="space-y-2">
-          <span className="text-xs font-medium text-[#555]">Título</span>
+          <span className="text-xs font-medium text-muted-foreground">Título</span>
           <div className="flex items-center gap-2">
             <input
               type="color"
               value={profile.title_color?.startsWith('#') ? profile.title_color : (profile.text_color?.startsWith('#') ? profile.text_color : '#000000')}
               onChange={e => update('title_color', e.target.value)}
-              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+              className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 shrink-0"
             />
             <FontPickerButton
               value={profile.title_font || profile.font_family}
@@ -1151,13 +1153,13 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
         {/* Subtítulo */}
         <div className="space-y-2">
-          <span className="text-xs font-medium text-[#555]">Subtítulo / Bio</span>
+          <span className="text-xs font-medium text-muted-foreground">Subtítulo / Bio</span>
           <div className="flex items-center gap-2">
             <input
               type="color"
               value={profile.subtitle_color?.startsWith('#') ? profile.subtitle_color : (profile.text_color?.startsWith('#') ? profile.text_color : '#000000')}
               onChange={e => update('subtitle_color', e.target.value)}
-              className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+              className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 shrink-0"
             />
             <FontPickerButton
               value={profile.subtitle_font || profile.font_family}
@@ -1177,14 +1179,14 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
           onClick={() => setFontModalTarget(null)}
         >
           <div
-            className="bg-white w-full sm:w-[420px] rounded-t-3xl sm:rounded-2xl shadow-2xl p-5 max-h-[70vh] flex flex-col"
+            className="bg-card w-full sm:w-[420px] rounded-t-3xl sm:rounded-2xl shadow-2xl p-5 max-h-[70vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-[#111]">{FONT_TARGET_LABELS[fontModalTarget]}</h3>
+              <h3 className="text-base font-semibold text-foreground">{FONT_TARGET_LABELS[fontModalTarget]}</h3>
               <button
                 onClick={() => setFontModalTarget(null)}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-[#F0F0F0] hover:bg-[#E0E0E0] transition-colors text-[#555]"
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-[#F0F0F0] hover:bg-[#E0E0E0] transition-colors text-muted-foreground"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -1204,7 +1206,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                       setFontModalTarget(null);
                     }}
                     className={`flex flex-col items-start px-4 py-3 rounded-xl border-2 transition-colors text-left ${
-                      selected ? 'border-[#0B76A0] bg-[#e8f4f8]' : 'border-[#E8E8E8] hover:border-[#BFBFBF]'
+                      selected ? 'border-primary bg-accent' : 'border-border hover:border-border'
                     }`}
                   >
                     <span
@@ -1213,7 +1215,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                     >
                       Aa
                     </span>
-                    <span className={`text-xs ${selected ? 'text-[#095f7d] font-medium' : 'text-[#666]'}`}>
+                    <span className={`text-xs ${selected ? 'text-accent-foreground font-medium' : 'text-muted-foreground'}`}>
                       {opt.label}
                     </span>
                   </button>
@@ -1226,55 +1228,55 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
       {/* WhatsApp — só aparece se o botão estiver ativado na aba Links */}
       {profile.whatsapp_enabled && (
-        <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-4">
           <div className="flex items-center gap-2">
             <svg width={18} height={18} viewBox="0 0 24 24" fill="#25D366" aria-hidden="true">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
             </svg>
-            <h3 className="text-sm font-semibold text-[#333333]">Botão WhatsApp</h3>
+            <h3 className="text-sm font-semibold text-foreground">Botão WhatsApp</h3>
           </div>
 
           {/* Cor do botão */}
           <div className="space-y-2">
-            <span className="text-xs font-medium text-[#555]">Cor do botão</span>
+            <span className="text-xs font-medium text-muted-foreground">Cor do botão</span>
             <div className="flex items-center gap-2">
               <input
                 type="color"
                 value={profile.whatsapp_bg_color?.startsWith('#') ? profile.whatsapp_bg_color : '#25D366'}
                 onChange={e => update('whatsapp_bg_color', e.target.value)}
-                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+                className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 shrink-0"
               />
               <input
                 type="text"
                 value={profile.whatsapp_bg_color ?? '#25D366'}
                 onChange={e => { if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) update('whatsapp_bg_color', e.target.value); }}
-                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#25D366] font-mono min-w-0"
+                className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#25D366] font-mono min-w-0"
               />
             </div>
           </div>
 
           {/* Cor do ícone */}
           <div className="space-y-2">
-            <span className="text-xs font-medium text-[#555]">Cor do ícone</span>
+            <span className="text-xs font-medium text-muted-foreground">Cor do ícone</span>
             <div className="flex items-center gap-2">
               <input
                 type="color"
                 value={profile.whatsapp_icon_color?.startsWith('#') ? profile.whatsapp_icon_color : '#ffffff'}
                 onChange={e => update('whatsapp_icon_color', e.target.value)}
-                className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5 shrink-0"
+                className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 shrink-0"
               />
               <input
                 type="text"
                 value={profile.whatsapp_icon_color ?? '#ffffff'}
                 onChange={e => { if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) update('whatsapp_icon_color', e.target.value); }}
-                className="w-full px-3 py-2 text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#25D366] font-mono min-w-0"
+                className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#25D366] font-mono min-w-0"
               />
             </div>
           </div>
 
           {/* Tamanho */}
           <div className="space-y-2">
-            <span className="text-xs font-medium text-[#555]">Tamanho</span>
+            <span className="text-xs font-medium text-muted-foreground">Tamanho</span>
             <div className="grid grid-cols-2 gap-2">
               {([
                 { value: 'normal', label: 'Normal', px: 56 },
@@ -1287,7 +1289,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                     type="button"
                     onClick={() => update('whatsapp_size', opt.value)}
                     className={`flex flex-col items-center gap-2 py-3 border-2 rounded-xl transition-colors ${
-                      selected ? 'border-[#25D366] bg-[#e8f8ed]' : 'border-[#E8E8E8] hover:border-[#BFBFBF]'
+                      selected ? 'border-[#25D366] bg-[#e8f8ed]' : 'border-border hover:border-border'
                     }`}
                   >
                     <div
@@ -1302,7 +1304,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                       </svg>
                     </div>
-                    <span className={`text-xs ${selected ? 'text-[#1a8a46] font-semibold' : 'text-[#666]'}`}>{opt.label}</span>
+                    <span className={`text-xs ${selected ? 'text-[#1a8a46] font-semibold' : 'text-muted-foreground'}`}>{opt.label}</span>
                   </button>
                 );
               })}
@@ -1311,7 +1313,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
           {/* Animação */}
           <div className="space-y-2">
-            <span className="text-xs font-medium text-[#555]">Animação</span>
+            <span className="text-xs font-medium text-muted-foreground">Animação</span>
             <div className="grid grid-cols-2 gap-2">
               {([
                 { value: 'none',   label: 'Nenhuma' },
@@ -1326,7 +1328,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                     type="button"
                     onClick={() => update('whatsapp_animation', opt.value)}
                     className={`py-2.5 px-3 border-2 rounded-xl text-xs transition-colors ${
-                      selected ? 'border-[#25D366] bg-[#e8f8ed] text-[#1a8a46] font-semibold' : 'border-[#E8E8E8] hover:border-[#BFBFBF] text-[#666]'
+                      selected ? 'border-[#25D366] bg-[#e8f8ed] text-[#1a8a46] font-semibold' : 'border-border hover:border-border text-muted-foreground'
                     }`}
                   >
                     {opt.label}
@@ -1343,23 +1345,23 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
         const tag = STATUS_TAGS.find(t => t.id === profile.status_tag)!;
         if (!tag) return null;
         return (
-          <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-5">
+          <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#333333]">Tag de status</h3>
+              <h3 className="text-sm font-semibold text-foreground">Tag de status</h3>
               <StatusTagDisplay tag={tag} profile={profile} previewSize="sm" />
             </div>
 
             {/* Cor do texto */}
             <div className="space-y-2">
-              <span className="text-xs font-medium text-[#555]">Cor do texto</span>
+              <span className="text-xs font-medium text-muted-foreground">Cor do texto</span>
               <div className="flex items-center gap-3">
                 <input type="color"
                   value={profile.status_tag_color ?? tag.color}
                   onChange={e => update('status_tag_color', e.target.value)}
-                  className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5"
+                  className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5"
                 />
                 <button onClick={() => update('status_tag_color', tag.color)}
-                  className="text-xs text-[#BFBFBF] hover:text-[#555] transition-colors">
+                  className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors">
                   Restaurar padrão
                 </button>
               </div>
@@ -1367,7 +1369,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
             {/* Cor do fundo */}
             <div className="space-y-2">
-              <span className="text-xs font-medium text-[#555]">Cor do fundo</span>
+              <span className="text-xs font-medium text-muted-foreground">Cor do fundo</span>
               <div className="flex items-center gap-3">
                 <input type="color"
                   value={profile.status_tag_bg
@@ -1376,10 +1378,10 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
                       : profile.status_tag_bg
                     : tag.color}
                   onChange={e => update('status_tag_bg', e.target.value + '26')}
-                  className="w-10 h-10 rounded-lg border border-[#D9D9D9] cursor-pointer p-0.5"
+                  className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5"
                 />
                 <button onClick={() => update('status_tag_bg', tag.bg)}
-                  className="text-xs text-[#BFBFBF] hover:text-[#555] transition-colors">
+                  className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors">
                   Restaurar padrão
                 </button>
               </div>
@@ -1387,14 +1389,14 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
             {/* Tamanho */}
             <div className="space-y-2">
-              <span className="text-xs font-medium text-[#555]">Tamanho</span>
+              <span className="text-xs font-medium text-muted-foreground">Tamanho</span>
               <div className="flex gap-2">
                 {STATUS_TAG_SIZES.map(s => {
                   const active = (profile.status_tag_size ?? 'md') === s.id;
                   return (
                     <button key={s.id} onClick={() => update('status_tag_size', s.id)}
                       className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-colors ${
-                        active ? 'border-[#0B76A0] bg-[#e8f4f8] text-[#0B76A0]' : 'border-[#E8E8E8] text-[#888] hover:border-[#BFBFBF]'
+                        active ? 'border-primary bg-accent text-primary' : 'border-border text-muted-foreground hover:border-border'
                       }`}>
                       {s.label}
                     </button>
@@ -1405,17 +1407,17 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
             {/* Ícone */}
             <div className="space-y-2">
-              <span className="text-xs font-medium text-[#555]">Ícone</span>
+              <span className="text-xs font-medium text-muted-foreground">Ícone</span>
               <div className="flex flex-wrap gap-2">
                 {STATUS_TAG_ICONS.map(ic => {
                   const active = (profile.status_tag_icon ?? 'dot') === ic.id;
                   return (
                     <button key={ic.id} onClick={() => update('status_tag_icon', ic.id)}
                       className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center text-base transition-colors ${
-                        active ? 'border-[#0B76A0] bg-[#e8f4f8]' : 'border-[#E8E8E8] hover:border-[#BFBFBF]'
+                        active ? 'border-primary bg-accent' : 'border-border hover:border-border'
                       }`}>
                       {ic.id === 'dot'
-                        ? <span className="w-2.5 h-2.5 rounded-full bg-[#0B76A0]" />
+                        ? <span className="w-2.5 h-2.5 rounded-full bg-primary" />
                         : ic.label}
                     </button>
                   );
@@ -1425,11 +1427,11 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
             {/* Fonte */}
             <div className="space-y-2">
-              <span className="text-xs font-medium text-[#555]">Fonte</span>
+              <span className="text-xs font-medium text-muted-foreground">Fonte</span>
               <select
                 value={profile.status_tag_font ?? ''}
                 onChange={e => update('status_tag_font', e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-[#D9D9D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B76A0] bg-white"
+                className="w-full px-3 py-2.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring bg-card"
               >
                 <option value="">Padrão do perfil</option>
                 {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
@@ -1438,14 +1440,14 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
 
             {/* Posição */}
             <div className="space-y-2">
-              <span className="text-xs font-medium text-[#555]">Posição</span>
+              <span className="text-xs font-medium text-muted-foreground">Posição</span>
               <div className="grid grid-cols-1 gap-2">
                 {STATUS_TAG_POSITIONS.map(pos => {
                   const active = (profile.status_tag_position ?? 'above-left') === pos.id;
                   return (
                     <button key={pos.id} onClick={() => update('status_tag_position', pos.id)}
                       className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-colors ${
-                        active ? 'border-[#0B76A0] bg-[#e8f4f8] text-[#0B76A0]' : 'border-[#E8E8E8] text-[#555] hover:border-[#BFBFBF]'
+                        active ? 'border-primary bg-accent text-primary' : 'border-border text-muted-foreground hover:border-border'
                       }`}>
                       <span className="font-medium">{pos.label}</span>
                       <span className="text-xs opacity-60">{pos.desc}</span>
@@ -1461,7 +1463,7 @@ function AppearanceTab({ profile, onProfileChange }: { profile: Profile; onProfi
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-[#0B76A0] text-white font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white font-medium rounded-xl hover:bg-primary/85 disabled:opacity-50 transition-colors"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
         {saved ? 'Salvo!' : 'Salvar aparência'}
@@ -1561,9 +1563,9 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-[#BFBFBF]">Escolha um tema para aplicar cores e efeitos pré-definidos.</p>
+      <p className="text-xs text-muted-foreground">Escolha um tema para aplicar cores e efeitos pré-definidos.</p>
       {saving && (
-        <div className="flex items-center gap-2 text-sm text-[#0B76A0]">
+        <div className="flex items-center gap-2 text-sm text-primary">
           <Loader2 className="w-4 h-4 animate-spin" /> Aplicando tema...
         </div>
       )}
@@ -1594,7 +1596,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         return (
           <div key={group} className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-[#BFBFBF]">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 {group === 'static' ? 'Estáticos' : 'Animados'}
               </span>
               <div className="flex-1 h-px bg-[#E8E8E8]" />
@@ -1618,7 +1620,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                         isPreviewing
                           ? 'ring-2 ring-amber-400 ring-offset-2 shadow-lg scale-[1.04]'
                           : isSelected
-                          ? 'ring-2 ring-[#0B76A0] ring-offset-2 shadow-lg scale-[1.04]'
+                          ? 'ring-2 ring-ring ring-offset-2 shadow-lg scale-[1.04]'
                           : locked && !isPreviewing
                           ? 'opacity-60 hover:opacity-80 hover:scale-[1.03] ring-1 ring-black/10'
                           : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-black/10'
@@ -1626,9 +1628,9 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                       style={{ aspectRatio: '3/4' }}
                     >
                       {/* Card body */}
-                      {themeConfigs[theme.id]?.preview_url ? (
+                      {theme.thumbnail ? (
                         <img
-                          src={themeConfigs[theme.id]!.preview_url}
+                          src={theme.thumbnail}
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                       ) : (
@@ -1683,7 +1685,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
 
                       {/* Selected checkmark */}
                       {isSelected && !locked && (
-                        <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
+                        <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow">
                           <Check className="w-3 h-3 text-white" />
                         </div>
                       )}
@@ -1693,7 +1695,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                     <p
                       className={`text-[11px] text-center leading-tight truncate w-full ${
                         isPreviewing ? 'font-semibold text-amber-600' :
-                        isSelected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'
+                        isSelected ? 'font-semibold text-primary' : 'text-gray-500'
                       }`}
                     >
                       {theme.name}
@@ -1710,7 +1712,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
       {customThemes.filter(t => t.media_type === 'image').length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#BFBFBF]">Estáticos</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Estáticos</span>
             <div className="flex-1 h-px bg-[#E8E8E8]" />
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-3 gap-y-4">
@@ -1730,7 +1732,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                       isPreviewing
                         ? 'ring-2 ring-amber-400 ring-offset-2 shadow-lg scale-[1.04]'
                         : isSelected
-                        ? 'ring-2 ring-[#0B76A0] ring-offset-2 shadow-lg scale-[1.04]'
+                        ? 'ring-2 ring-ring ring-offset-2 shadow-lg scale-[1.04]'
                         : locked && !isPreviewing
                         ? 'opacity-60 hover:opacity-80 hover:scale-[1.03] ring-1 ring-black/10'
                         : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-black/10'
@@ -1749,14 +1751,14 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                       </div>
                     )}
                     {isSelected && !locked && (
-                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
+                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                     )}
                   </button>
                   <p className={`text-[11px] text-center leading-tight truncate w-full ${
                     isPreviewing ? 'font-semibold text-amber-600' :
-                    isSelected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'
+                    isSelected ? 'font-semibold text-primary' : 'text-gray-500'
                   }`}>
                     {theme.name}
                   </p>
@@ -1771,7 +1773,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
       {customThemes.filter(t => t.media_type === 'video').length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#BFBFBF]">Vídeo</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Vídeo</span>
             <div className="flex-1 h-px bg-[#E8E8E8]" />
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-3 gap-y-4">
@@ -1791,7 +1793,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                       isPreviewing
                         ? 'ring-2 ring-amber-400 ring-offset-2 shadow-lg scale-[1.04]'
                         : isSelected
-                        ? 'ring-2 ring-[#0B76A0] ring-offset-2 shadow-lg scale-[1.04]'
+                        ? 'ring-2 ring-ring ring-offset-2 shadow-lg scale-[1.04]'
                         : locked && !isPreviewing
                         ? 'opacity-60 hover:opacity-80 hover:scale-[1.03] ring-1 ring-black/10'
                         : 'hover:scale-[1.03] hover:shadow-md ring-1 ring-black/10'
@@ -1803,7 +1805,7 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                       : <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: theme.preview_color }} />
                     }
                     {/* Ícone de play — indica que é vídeo */}
-                    <div className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow pointer-events-none">
+                    <div className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-card flex items-center justify-center shadow pointer-events-none">
                       <span className="text-[8px] leading-none pl-px">▶</span>
                     </div>
                     <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-amber-400 text-[8px] font-black text-black leading-tight shadow">
@@ -1820,14 +1822,14 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                       </div>
                     )}
                     {isSelected && !locked && (
-                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#0B76A0] flex items-center justify-center shadow">
+                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                     )}
                   </button>
                   <p className={`text-[11px] text-center leading-tight truncate w-full ${
                     isPreviewing ? 'font-semibold text-amber-600' :
-                    isSelected ? 'font-semibold text-[#0B76A0]' : 'text-gray-500'
+                    isSelected ? 'font-semibold text-primary' : 'text-gray-500'
                   }`}>
                     {theme.name}
                   </p>
@@ -1924,16 +1926,16 @@ function CropModal({ file, onConfirm, onCancel }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+      <div className="bg-card rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
         <div>
-          <h3 className="text-sm font-semibold text-[#111]">Reposicionar foto</h3>
-          <p className="text-xs text-[#BFBFBF] mt-0.5">Arraste para posicionar · Slider para zoom</p>
+          <h3 className="text-sm font-semibold text-foreground">Reposicionar foto</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Arraste para posicionar · Slider para zoom</p>
         </div>
 
         {/* Viewport circular */}
         <div className="flex justify-center">
           <div
-            className="relative overflow-hidden rounded-full ring-2 ring-[#0B76A0] ring-offset-2"
+            className="relative overflow-hidden rounded-full ring-2 ring-ring ring-offset-2"
             style={{
               width: CROP_VIEWPORT, height: CROP_VIEWPORT,
               background: '#ddd',
@@ -1977,7 +1979,7 @@ function CropModal({ file, onConfirm, onCancel }: {
 
         {/* Zoom */}
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#888] shrink-0 w-8">Zoom</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-8">Zoom</span>
           <input
             type="range"
             min={minScale} max={minScale * 3} step={0.001}
@@ -1991,13 +1993,13 @@ function CropModal({ file, onConfirm, onCancel }: {
         <div className="flex gap-2 pt-1">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 border border-[#D9D9D9] rounded-xl text-sm text-[#555] hover:bg-[#f5f5f5] transition-colors"
+            className="flex-1 py-2.5 border border-border rounded-xl text-sm text-muted-foreground hover:bg-muted transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 py-2.5 bg-[#0B76A0] rounded-xl text-sm text-white font-medium hover:bg-[#095f7d] transition-colors"
+            className="flex-1 py-2.5 bg-primary rounded-xl text-sm text-white font-medium hover:bg-primary/85 transition-colors"
           >
             Aplicar
           </button>
@@ -2093,7 +2095,7 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
         />
       )}
 
-      <div className="bg-white rounded-2xl border border-[#D9D9D9] p-5 shadow-sm space-y-4">
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-4">
 
         {/* Avatar upload */}
         <div className="flex flex-col items-center gap-3">
@@ -2101,7 +2103,7 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
             <img
               src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`}
               alt="Avatar"
-              className="w-24 h-24 rounded-full object-cover border-2 border-[#D9D9D9] shadow-sm"
+              className="w-24 h-24 rounded-full object-cover border-2 border-border shadow-sm"
               referrerPolicy="no-referrer"
             />
             {profile.plan === 'pro' && (
@@ -2132,12 +2134,12 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="text-xs text-[#0B76A0] hover:underline disabled:opacity-50"
+                className="text-xs text-primary hover:underline disabled:opacity-50"
               >
                 {uploading ? 'Enviando…' : 'Alterar foto de perfil'}
               </button>
               {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
-              <p className="text-[11px] text-[#BFBFBF] text-center">
+              <p className="text-[11px] text-muted-foreground text-center">
                 JPG, PNG ou WebP · Recorte circular 400×400 px
               </p>
             </>
@@ -2155,11 +2157,11 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
         {/* Preset avatar picker — available to all plans */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#555555]">Escolher avatar</span>
+            <span className="text-xs font-medium text-muted-foreground">Escolher avatar</span>
             <button
               type="button"
               onClick={() => setAvatarSeeds(randomSeeds(16))}
-              className="flex items-center gap-1 text-xs text-[#0B76A0] hover:underline"
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -2179,8 +2181,8 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
                   onClick={() => handleSelectPreset(seed)}
                   className={`rounded-full overflow-hidden transition-all focus:outline-none ${
                     selected
-                      ? 'ring-2 ring-[#0B76A0] ring-offset-2 scale-110'
-                      : 'ring-1 ring-black/10 hover:scale-110 hover:ring-[#0B76A0]/50'
+                      ? 'ring-2 ring-ring ring-offset-2 scale-110'
+                      : 'ring-1 ring-black/10 hover:scale-110 hover:ring-ring/50'
                   }`}
                 >
                   <img
@@ -2196,22 +2198,22 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-[#555555]">Nome de exibição</span>
+          <span className="text-xs font-medium text-muted-foreground">Nome de exibição</span>
           <input
-            className="px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0]"
+            className="px-3 py-2 text-base md:text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             value={profile.display_name ?? ''}
             onChange={e => update('display_name', e.target.value)}
           />
         </label>
         <label className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#555555]">Bio</span>
-            <span className={`text-[11px] tabular-nums ${(profile.bio?.length ?? 0) >= 80 ? 'text-red-400 font-semibold' : 'text-[#BFBFBF]'}`}>
+            <span className="text-xs font-medium text-muted-foreground">Bio</span>
+            <span className={`text-[11px] tabular-nums ${(profile.bio?.length ?? 0) >= 80 ? 'text-red-400 font-semibold' : 'text-muted-foreground'}`}>
               {profile.bio?.length ?? 0}/80
             </span>
           </div>
           <textarea
-            className="px-3 py-2 text-base md:text-sm border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B76A0] resize-none"
+            className="px-3 py-2 text-base md:text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             rows={2}
             maxLength={80}
             value={profile.bio ?? ''}
@@ -2222,7 +2224,7 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-[#0B76A0] text-white font-medium rounded-xl hover:bg-[#095f7d] disabled:opacity-50 transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white font-medium rounded-xl hover:bg-primary/85 disabled:opacity-50 transition-colors"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
         {saved ? 'Salvo!' : 'Salvar perfil'}
@@ -2235,6 +2237,7 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
+  const { theme, toggle: toggleTheme } = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('links');
@@ -2262,8 +2265,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0B76A0]" />
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -2282,15 +2285,15 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex">
+    <div className="min-h-screen bg-muted flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-[#D9D9D9] hidden md:flex flex-col">
-        <div className="p-6 border-b border-[#ebebeb] flex flex-col items-center text-center">
-          <a href="/"><img src={logo} alt="linqu.es" className="h-20 w-auto" /></a>
+      <aside className="w-64 bg-card border-r border-border hidden md:flex flex-col">
+        <div className="p-6 border-b border-border flex flex-col items-center text-center">
+          <a href="/"><AdaptiveLogo className="h-20 w-auto" /></a>
           <div className="flex items-center justify-center gap-2 mt-1">
-            <p className="text-xs text-[#BFBFBF]">@{profile.username}</p>
+            <p className="text-xs text-muted-foreground">@{profile.username}</p>
             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md leading-tight ${
-              profile.plan === 'pro' ? 'bg-amber-400 text-black' : 'bg-[#D9D9D9] text-[#555555]'
+              profile.plan === 'pro' ? 'bg-amber-400 text-black' : 'bg-[#D9D9D9] text-muted-foreground'
             }`}>
               {profile.plan === 'pro' ? 'PRO' : 'FREE'}
             </span>
@@ -2302,7 +2305,7 @@ export default function Dashboard() {
               key={id}
               onClick={() => setTab(id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                tab === id ? 'bg-[#e8f4f8] text-[#095f7d]' : 'text-[#555555] hover:bg-[#f5f5f5]'
+                tab === id ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -2310,12 +2313,12 @@ export default function Dashboard() {
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-[#ebebeb]">
+        <div className="p-4 border-t border-border">
           <a
             href={`/${profile.username}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-[#555555] hover:text-[#000000] hover:bg-[#f5f5f5] rounded-xl transition-colors mb-1"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors mb-1"
           >
             <ExternalLink className="w-4 h-4" />
             Ver meu perfil
@@ -2323,15 +2326,22 @@ export default function Dashboard() {
           {profile.role === 'admin' && (
             <a
               href="/admin"
-              className="flex items-center gap-2 px-3 py-2 text-sm text-[#0B76A0] hover:bg-[#e8f4f8] rounded-xl transition-colors mb-1"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-accent rounded-xl transition-colors mb-1"
             >
               <ShieldCheck className="w-4 h-4" />
               Painel Admin
             </a>
           )}
           <button
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors mb-1"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          </button>
+          <button
             onClick={() => signOut()}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#555555] hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Sair
@@ -2345,7 +2355,7 @@ export default function Dashboard() {
         target="_blank"
         rel="noopener noreferrer"
         style={{ top: 'calc(0.75rem + env(safe-area-inset-top))', touchAction: 'manipulation' }}
-        className="fixed right-4 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-full bg-white border border-[#D9D9D9] text-[#0B76A0] shadow-sm hover:bg-[#e8f4f8] transition-colors"
+        className="fixed right-4 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-full bg-card border border-border text-primary shadow-sm hover:bg-accent transition-colors"
         aria-label="Ver meu perfil"
       >
         <ExternalLink className="w-4 h-4" />
@@ -2353,7 +2363,7 @@ export default function Dashboard() {
 
       {/* Mobile tab bar */}
       <div
-        className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-[#D9D9D9] flex z-50"
+        className="fixed bottom-0 left-0 right-0 md:hidden bg-card border-t border-border flex z-50"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {mobileTabs.map(({ id, label, icon: Icon }) => (
@@ -2362,7 +2372,7 @@ export default function Dashboard() {
             onClick={() => setTab(id)}
             style={{ touchAction: 'manipulation' }}
             className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 text-[10px] font-medium transition-colors ${
-              tab === id ? 'text-[#0B76A0]' : 'text-[#BFBFBF]'
+              tab === id ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
             <Icon className="w-5 h-5" />
@@ -2378,7 +2388,7 @@ export default function Dashboard() {
             <MobileFullPreview profile={profile} />
           ) : (
             <div className="max-w-lg mx-auto">
-              <h2 className="text-xl font-bold text-[#000000] mb-6">
+              <h2 className="text-xl font-bold text-foreground mb-6">
                 {desktopTabs.find(t => t.id === tab)?.label}
               </h2>
               {tab === 'links' && <LinksTab profile={profile} onProfileChange={setProfile} />}
@@ -2390,10 +2400,10 @@ export default function Dashboard() {
         </main>
 
         {/* Preview panel */}
-        <div className="hidden lg:flex flex-col w-80 xl:w-96 border-l border-[#D9D9D9] bg-[#ebebeb] p-6">
-          <p className="text-xs font-semibold text-[#BFBFBF] uppercase tracking-wider mb-4 text-center">Preview</p>
+        <div className="hidden lg:flex flex-col w-80 xl:w-96 border-l border-border bg-muted p-6">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 text-center">Preview</p>
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-64 h-[520px] rounded-[2.5rem] border-8 border-[#111111] shadow-2xl overflow-hidden bg-white relative">
+            <div className="w-64 h-[520px] rounded-[2.5rem] border-8 border-[#111111] shadow-2xl overflow-hidden bg-card relative">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-[#111111] rounded-b-xl z-10" />
               <MobilePreview profile={profile} />
             </div>
