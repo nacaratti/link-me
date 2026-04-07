@@ -969,6 +969,179 @@ function MarqueeStrip() {
 }
 
 // ─── CTA Section ──────────────────────────────────────────────────────────────
+// ─── Pricing Section ─────────────────────────────────────────────────────────
+function PricingSection({ onCTA }: { onCTA: () => void }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+
+  const freeFeatures = [
+    'Página pública personalizada',
+    'Links ilimitados',
+    'Temas gratuitos (10+)',
+    'Cores e fontes customizáveis',
+    'Botão WhatsApp flutuante',
+    'Status tag (Open to Work, etc)',
+    'Estatísticas de cliques',
+  ];
+
+  const proFeatures = [
+    'Tudo do plano grátis',
+    'Temas PRO animados (WebGL)',
+    'Temas de vídeo exclusivos',
+    'Temas profissionais por área',
+    'Novos temas em primeira mão',
+    'Suporte prioritário',
+  ];
+
+  return (
+    <section className="lp-section-pad" style={{ padding: '100px 40px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <SectionHeader
+          tag="Planos"
+          title={<>Simples assim.<br /><span style={{ color: C.blue }}>Sem surpresas.</span></>}
+          sub="Comece grátis. Faça upgrade quando quiser ir além."
+        />
+
+        <div ref={ref} style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 16,
+          alignItems: 'start',
+        }}>
+
+          {/* FREE */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            style={{
+              background: C.gray1,
+              border: `1px solid ${C.gray2}`,
+              borderRadius: 24,
+              padding: '36px 32px',
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', color: C.muted, textTransform: 'uppercase', marginBottom: 16 }}>Grátis</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 8 }}>
+              <span style={{ fontSize: 48, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }}>R$ 0</span>
+              <span style={{ fontSize: 14, color: C.muted, paddingBottom: 6 }}>/mês</span>
+            </div>
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 28 }}>Para sempre. Sem cartão.</p>
+
+            <button
+              onClick={onCTA}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: 100,
+                border: `1px solid ${C.gray2}`,
+                background: 'transparent',
+                color: C.white,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: "'Open Sans', sans-serif",
+                marginBottom: 28,
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = C.gray2}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              Criar conta grátis
+            </button>
+
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {freeFeatures.map(f => (
+                <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: C.mutedLt }}>
+                  <span style={{ color: '#4ade80', fontSize: 15 }}>✓</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+          {/* PRO */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            style={{
+              background: 'linear-gradient(160deg, #0d1a0a 0%, #0a0700 100%)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              borderRadius: 24,
+              padding: '36px 32px',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 0 60px rgba(245,158,11,0.07)',
+            }}
+          >
+            {/* Glow */}
+            <div style={{
+              position: 'absolute', top: -40, right: -40,
+              width: 200, height: 200,
+              background: 'radial-gradient(ellipse, rgba(245,158,11,0.12) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', color: '#f59e0b', textTransform: 'uppercase' }}>PRO</div>
+              <div style={{ fontSize: 10, fontWeight: 800, background: '#f59e0b', color: '#000', padding: '3px 8px', borderRadius: 100 }}>
+                MAIS POPULAR
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 4 }}>
+              <span style={{ fontSize: 48, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: C.white }}>R$ 9</span>
+              <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: C.white, paddingBottom: 2 }}>,90</span>
+              <span style={{ fontSize: 14, color: C.muted, paddingBottom: 6 }}>/mês</span>
+            </div>
+            <p style={{ fontSize: 13, color: C.muted, marginBottom: 28 }}>Cancele quando quiser.</p>
+
+            <button
+              onClick={onCTA}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: 100,
+                border: 'none',
+                background: '#f59e0b',
+                color: '#000',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: "'Open Sans', sans-serif",
+                marginBottom: 28,
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                boxShadow: '0 4px 24px rgba(245,158,11,0.3)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 32px rgba(245,158,11,0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 24px rgba(245,158,11,0.3)';
+              }}
+            >
+              ✦ Assinar PRO — R$ 9,90/mês
+            </button>
+
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {proFeatures.map(f => (
+                <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: C.mutedLt }}>
+                  <span style={{ color: '#f59e0b', fontSize: 15 }}>✦</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CTASection({ onCTA }: { onCTA: () => void }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
@@ -1346,6 +1519,7 @@ export default function LandingPage() {
         <FeaturesSection />
         <ThemeShowcase />
         <HowItWorks />
+        <PricingSection onCTA={() => navigate('/entrar')} />
         <CTASection onCTA={() => navigate('/entrar')} />
         <Footer />
       </div>

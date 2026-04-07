@@ -5,7 +5,11 @@
       "Bash(npm run:*)",
       "Bash(node -e \"const l = require\\('./node_modules/lucide-react'\\); console.log\\('Tag' in l, 'Tags' in l\\)\")",
       "WebFetch(domain:www.figma.com)",
-      "Bash(ls C:/Users/davin/OneDrive/link-me/*.html)"
+      "Bash(ls C:/Users/davin/OneDrive/link-me/*.html)",
+      "WebSearch",
+      "WebFetch(domain:docs.abacatepay.com)",
+      "WebFetch(domain:abacatepay.readme.io)",
+      "WebFetch(domain:abacatepay.github.io)"
     ]
   }
 }

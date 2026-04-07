@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Reorder } from 'motion/react';
 import {
   Plus, Trash2, GripVertical, ExternalLink, Settings,
   Link as LinkIcon, Layout, Loader2, LogOut, Eye, EyeOff, Save,
-  Check, Palette, X, Smartphone, ShieldCheck, Camera, Tag,
+  Check, Palette, X, Smartphone, ShieldCheck, Camera, Tag, Crown,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
@@ -1629,10 +1630,22 @@ function ThemeTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
                     >
                       {/* Card body */}
                       {theme.thumbnail ? (
-                        <img
-                          src={theme.thumbnail}
-                          className="absolute inset-0 w-full h-full object-cover"
-                        />
+                        theme.thumbnail.endsWith('.mp4') ? (
+                          <video
+                            src={theme.thumbnail}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            preload="metadata"
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src={theme.thumbnail}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        )
                       ) : (
                         <div
                           className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
@@ -2230,7 +2243,23 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
         {saved ? 'Salvo!' : 'Salvar perfil'}
       </button>
 
+      {profile.plan !== 'pro' && <UpgradeButton className="md:hidden" />}
       <LogoutButton />
+    </div>
+  );
+}
+
+function UpgradeButton({ className }: { className?: string }) {
+  const navigate = useNavigate();
+  return (
+    <div className={className}>
+      <button
+        onClick={() => navigate('/upgrade')}
+        className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-bold bg-amber-400 hover:bg-amber-300 text-black transition-colors"
+      >
+        <Crown className="w-4 h-4" />
+        Upgrade PRO — R$ 9,90/mês
+      </button>
     </div>
   );
 }
@@ -2304,7 +2333,7 @@ export default function Dashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border hidden md:flex flex-col">
         <div className="p-6 border-b border-border flex flex-col items-center text-center">
-          <a href="/"><AdaptiveLogo className="h-20 w-auto" /></a>
+          <a href="/"><img src={theme === 'dark' ? '/logo_white.png' : '/logo_black.png'} alt="linqu.es" className="h-20 w-auto" /></a>
           <div className="flex items-center justify-center gap-2 mt-1">
             <p className="text-xs text-muted-foreground">@{profile.username}</p>
             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md leading-tight ${
@@ -2313,6 +2342,9 @@ export default function Dashboard() {
               {profile.plan === 'pro' ? 'PRO' : 'FREE'}
             </span>
           </div>
+          {profile.plan !== 'pro' && (
+            <UpgradeButton className="mt-3 w-full" />
+          )}
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {desktopTabs.map(({ id, label, icon: Icon }) => (

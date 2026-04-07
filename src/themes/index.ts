@@ -13,6 +13,9 @@ const CrystalBackground     = lazy(() => import('./crystal/Background'));
 // ── CSS animations ────────────────────────────────────────────────────────────
 const AuroraBackground      = lazy(() => import('./aurora/Background'));
 
+// ── Vídeo ─────────────────────────────────────────────────────────────────────
+const BeyhiveBackground     = lazy(() => import('./beyhive/Background'));
+
 // ── Canvas 2D ─────────────────────────────────────────────────────────────────
 const LaserBackground         = lazy(() => import('./laser/Background'));
 const ConstellationBackground = lazy(() => import('./constellation/Background'));
@@ -174,6 +177,22 @@ export const THEMES: ThemeDefinition[] = [
     Background: AuroraBackground,
     thumbnail: '/temas/aurora.png',
   },
+  // ── Vídeo ─────────────────────────────────────────────────────────────────
+  {
+    id: 'beyhive',
+    name: 'Beyhive',
+    description: 'Vídeo exclusivo com estética dourada — para quem nasceu para brilhar.',
+    previewStyle: { background: 'linear-gradient(135deg, #1a1100 0%, #3a2800 50%, #0a0700 100%)' },
+    defaults: {
+      bg_color: '#0a0700', text_color: '#FFD700',
+      button_color: 'rgba(255,215,0,0.15)', button_text_color: '#FFD700',
+      button_style: 'pill', font_family: 'Playfair Display',
+    },
+    Background: BeyhiveBackground,
+    group: 'animated',
+    thumbnail: '/temas/bey.mp4',
+  },
+
   // ── Canvas 2D ──────────────────────────────────────────────────────────────
   {
     id: 'constellation',

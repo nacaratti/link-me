@@ -331,10 +331,9 @@ export default function PublicProfile() {
         <div className="mt-16 text-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <a
             href="/entrar"
-            className="text-xs font-bold uppercase tracking-widest opacity-30 hover:opacity-80 transition-opacity"
-            style={{ color: profile.text_color }}
+            className="inline-block opacity-30 hover:opacity-70 transition-opacity"
           >
-            linqu.es
+            <img src="/logo.png" alt="linqu.es" style={{ height: 35, width: 'auto' }} />
           </a>
         </div>
       </motion.div>

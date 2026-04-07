@@ -10,6 +10,7 @@ import AuthCallback from './components/AuthCallback';
 import TermsOfService from './components/TermsOfService';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import LandingPage from './components/LandingPage';
+import CheckoutPage from './components/CheckoutPage';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Loader2 } from 'lucide-react';
 
@@ -57,6 +58,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/upgrade" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       <Route path="/entrar" element={<GuestRoute><AuthPage /></GuestRoute>} />
       <Route path="/auth/callback" element={<AuthCallback />} />
