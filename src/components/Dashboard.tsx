@@ -2229,7 +2229,22 @@ function ProfileTab({ profile, onProfileChange }: { profile: Profile; onProfileC
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
         {saved ? 'Salvo!' : 'Salvar perfil'}
       </button>
+
+      <LogoutButton />
     </div>
+  );
+}
+
+function LogoutButton() {
+  const { signOut } = useAuth();
+  return (
+    <button
+      onClick={() => signOut()}
+      className="md:hidden w-full flex items-center justify-center gap-2 py-3 border border-border rounded-xl text-sm font-medium text-muted-foreground hover:text-destructive hover:border-destructive transition-colors"
+    >
+      <LogOut className="w-4 h-4" />
+      Sair da conta
+    </button>
   );
 }
 
