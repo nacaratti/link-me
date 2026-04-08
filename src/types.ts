@@ -138,4 +138,6 @@ export interface Profile {
   status_tag_font?: string | null;
   status_tag_icon?: string;
   status_tag_custom_label?: string | null;
+  pro_expires_at?: string | null;
+  stripe_subscription_id?: string | null;
 }

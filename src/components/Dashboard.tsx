@@ -5,6 +5,8 @@ import {
   Plus, Trash2, GripVertical, ExternalLink, Settings,
   Link as LinkIcon, Layout, Loader2, LogOut, Eye, EyeOff, Save,
   Check, Palette, X, Smartphone, ShieldCheck, Camera, Tag, Crown,
+  CreditCard, Calendar, AlertTriangle, CheckCircle,
+  BarChart2, MousePointerClick, TrendingUp, Monitor, Tablet,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { loadGoogleFont } from '../lib/fonts';
@@ -20,7 +22,7 @@ import { fetchThemeConfigs, isThemePro, invalidateThemeConfigCache, type ThemeCo
 import { fetchCustomThemes, type CustomTheme } from '../lib/customThemes';
 import WhatsappFloatingButton from './WhatsappFloatingButton';
 
-type Tab = 'links' | 'theme' | 'appearance' | 'profile' | 'preview';
+type Tab = 'links' | 'theme' | 'appearance' | 'profile' | 'stats' | 'plan' | 'preview';
 
 // ─── Status Tag components ────────────────────────────────────────────────────
 
@@ -2277,6 +2279,328 @@ function LogoutButton() {
   );
 }
 
+// ─── Stats Tab ────────────────────────────────────────────────────────────────
+
+interface ClickEvent {
+  clicked_at: string;
+  device_type: string | null;
+  link_id: number;
+}
+
+function StatsTab({ profile }: { profile: Profile }) {
+  const [events, setEvents]   = useState<ClickEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchEvents() {
+      const since = new Date();
+      since.setDate(since.getDate() - 29);
+      const { data } = await supabase
+        .from('link_click_events')
+        .select('clicked_at, device_type, link_id')
+        .eq('profile_id', profile.id)
+        .gte('clicked_at', since.toISOString())
+        .order('clicked_at', { ascending: false });
+      setEvents((data as ClickEvent[]) ?? []);
+      setLoading(false);
+    }
+    fetchEvents();
+  }, [profile.id]);
+
+  // ── Derivações ───────────────────────────────────────────────────────────────
+  const totalAllTime = profile.links.reduce((s, l) => s + (l.clicks ?? 0), 0);
+  const totalLast7   = events.filter(e => {
+    const d = new Date(e.clicked_at);
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+    return d >= cutoff;
+  }).length;
+
+  const topLink = [...profile.links].sort((a, b) => (b.clicks ?? 0) - (a.clicks ?? 0))[0];
+  const maxClicks = topLink?.clicks ?? 1;
+
+  // Gráfico últimos 7 dias
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split('T')[0];
+  });
+  const clicksByDay = last7Days.map(day => ({
+    label: new Date(day + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric' }),
+    count: events.filter(e => e.clicked_at.startsWith(day)).length,
+  }));
+  const maxDay = Math.max(...clicksByDay.map(d => d.count), 1);
+
+  // Dispositivos (últimos 30 dias)
+  const deviceCounts = events.reduce<Record<string, number>>((acc, e) => {
+    const k = e.device_type ?? 'desktop';
+    acc[k] = (acc[k] ?? 0) + 1;
+    return acc;
+  }, {});
+  const totalEvents = events.length;
+
+  const deviceList = [
+    { key: 'mobile',  label: 'Mobile',  icon: Smartphone },
+    { key: 'desktop', label: 'Desktop', icon: Monitor },
+    { key: 'tablet',  label: 'Tablet',  icon: Tablet },
+  ].map(d => ({ ...d, count: deviceCounts[d.key] ?? 0, pct: totalEvents ? Math.round(((deviceCounts[d.key] ?? 0) / totalEvents) * 100) : 0 }))
+   .filter(d => d.count > 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* KPIs */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Total de cliques', value: totalAllTime, icon: MousePointerClick, sub: 'todos os tempos' },
+          { label: 'Últimos 7 dias',   value: totalLast7,   icon: TrendingUp,        sub: 'cliques recentes' },
+          { label: 'Links ativos',     value: profile.links.filter(l => l.is_active).length, icon: BarChart2, sub: 'publicados' },
+        ].map(({ label, value, icon: Icon, sub }) => (
+          <div key={label} className="bg-card rounded-2xl border border-border p-4 shadow-sm flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Icon className="w-3.5 h-3.5" />
+              <span className="text-[11px] font-medium">{label}</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground tabular-nums">{value.toLocaleString('pt-BR')}</p>
+            <p className="text-[10px] text-muted-foreground">{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Gráfico 7 dias */}
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Cliques — últimos 7 dias</p>
+        {totalLast7 === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Nenhum clique registrado nos últimos 7 dias.</p>
+        ) : (
+          <div className="flex items-end gap-1.5 h-28">
+            {clicksByDay.map(({ label, count }) => (
+              <div key={label} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[10px] tabular-nums text-muted-foreground">{count > 0 ? count : ''}</span>
+                <div
+                  className="w-full rounded-t-md bg-primary transition-all"
+                  style={{ height: `${Math.max((count / maxDay) * 80, count > 0 ? 4 : 0)}px` }}
+                />
+                <span className="text-[9px] text-muted-foreground leading-tight text-center">{label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Ranking por link */}
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cliques por link</p>
+        {profile.links.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum link cadastrado.</p>
+        ) : (
+          [...profile.links]
+            .sort((a, b) => (b.clicks ?? 0) - (a.clicks ?? 0))
+            .map(link => (
+              <div key={link.id} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-foreground truncate max-w-[70%]">{link.title || link.url}</span>
+                  <span className="text-muted-foreground tabular-nums font-medium shrink-0">
+                    {(link.clicks ?? 0).toLocaleString('pt-BR')} cliques
+                  </span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{ width: `${maxClicks > 0 ? ((link.clicks ?? 0) / maxClicks) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            ))
+        )}
+      </div>
+
+      {/* Dispositivos */}
+      {deviceList.length > 0 && (
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dispositivos — últimos 30 dias</p>
+          {deviceList.map(({ key, label, icon: Icon, count, pct }) => (
+            <div key={key} className="flex items-center gap-3">
+              <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
+              <div className="flex-1 space-y-0.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-foreground">{label}</span>
+                  <span className="text-muted-foreground tabular-nums">{pct}% · {count}</span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            </div>
+          ))}
+          <p className="text-[10px] text-muted-foreground">Total de {totalEvents.toLocaleString('pt-BR')} eventos registrados</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Plan Tab ─────────────────────────────────────────────────────────────────
+
+function PlanTab({ profile, onProfileChange }: { profile: Profile; onProfileChange: (p: Profile) => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const [loading, setLoading]       = useState(false);
+  const [cancelled, setCancelled]   = useState(false);
+  const [expiresAt, setExpiresAt]   = useState<string | null>(profile.pro_expires_at ?? null);
+  const [error, setError]           = useState<string | null>(null);
+
+  const renewalLabel = expiresAt
+    ? new Date(expiresAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+    : null;
+
+  async function handleCancel() {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('subscription-cancel', { body: {} });
+      if (fnError) throw new Error(fnError.message ?? 'Erro ao cancelar');
+      if (data?.error) throw new Error(String(data.error));
+      const expiry = data?.expires_at as string ?? expiresAt;
+      setExpiresAt(expiry);
+      setCancelled(true);
+      setConfirming(false);
+      onProfileChange({ ...profile, pro_expires_at: expiry });
+    } catch (err: any) {
+      setError(err.message ?? 'Erro inesperado');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Cartão do plano */}
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
+            <Crown className="w-5 h-5 text-amber-500" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">linqu.es PRO</p>
+            <p className="text-xs text-muted-foreground">Plano mensal · R$ 9,90/mês</p>
+          </div>
+          <span className="ml-auto text-[10px] font-black px-2 py-1 rounded-md bg-amber-400 text-black">ATIVO</span>
+        </div>
+
+        {renewalLabel && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground border-t border-border pt-4">
+            <Calendar className="w-4 h-4 shrink-0" />
+            {cancelled
+              ? <span>Acesso garantido até <strong className="text-foreground">{renewalLabel}</strong></span>
+              : <span>Próxima renovação em <strong className="text-foreground">{renewalLabel}</strong></span>
+            }
+          </div>
+        )}
+      </div>
+
+      {/* Benefícios */}
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Incluído no seu plano</p>
+        {[
+          'Página pública personalizada',
+          'Links ilimitados',
+          'Botão de WhatsApp flutuante',
+          'Temas animados exclusivos',
+          'Temas de vídeos exclusivos',
+          'Novos temas em primeira mão',
+          'Estatísticas de cliques',
+          'Suporte prioritário',
+        ].map(f => (
+          <div key={f} className="flex items-center gap-2 text-sm text-foreground">
+            <CheckCircle className="w-4 h-4 text-amber-500 shrink-0" />
+            {f}
+          </div>
+        ))}
+      </div>
+
+      {/* Pagamento */}
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CreditCard className="w-4 h-4 shrink-0" />
+          <span>Gerenciado pelo Stripe — cancele quando quiser</span>
+        </div>
+      </div>
+
+      {/* Cancelamento */}
+      {!cancelled ? (
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
+          <p className="text-sm font-semibold text-foreground">Cancelar assinatura</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Ao cancelar, você continua com acesso PRO até o fim do período já pago. Após isso, sua conta volta para o plano gratuito.
+          </p>
+
+          {error && (
+            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-600 dark:text-red-400">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              {error}
+            </div>
+          )}
+
+          {!confirming ? (
+            <button
+              onClick={() => setConfirming(true)}
+              className="text-sm text-muted-foreground hover:text-red-500 underline underline-offset-2 transition-colors"
+            >
+              Cancelar assinatura
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                {renewalLabel
+                  ? `Você perderá o acesso PRO em ${renewalLabel}. Tem certeza?`
+                  : 'Você perderá o acesso PRO ao fim do período. Tem certeza?'
+                }
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCancel}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-60"
+                >
+                  {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Confirmar cancelamento
+                </button>
+                <button
+                  onClick={() => { setConfirming(false); setError(null); }}
+                  className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
+                >
+                  Manter PRO
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">Cancelamento confirmado</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {renewalLabel
+                  ? `Seu acesso PRO continua ativo até ${renewalLabel}. Nenhuma cobrança futura será feita.`
+                  : 'Nenhuma cobrança futura será feita. Você mantém o acesso PRO até o fim do período.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -2322,6 +2646,8 @@ export default function Dashboard() {
     { id: 'theme', label: 'Tema', icon: Layout },
     { id: 'appearance', label: 'Aparência', icon: Palette },
     { id: 'profile', label: 'Perfil', icon: Settings },
+    ...(profile.plan === 'pro' ? [{ id: 'stats' as Tab, label: 'Estatísticas', icon: BarChart2 }] : []),
+    ...(profile.plan === 'pro' ? [{ id: 'plan' as Tab, label: 'Meu Plano', icon: CreditCard }] : []),
   ];
   const mobileTabs: { id: Tab; label: string; icon: any }[] = [
     ...desktopTabs,
@@ -2442,6 +2768,8 @@ export default function Dashboard() {
               {tab === 'theme' && <ThemeTab profile={profile} onProfileChange={setProfile} />}
               {tab === 'appearance' && <AppearanceTab profile={profile} onProfileChange={setProfile} />}
               {tab === 'profile' && <ProfileTab profile={profile} onProfileChange={setProfile} />}
+              {tab === 'stats' && <StatsTab profile={profile} />}
+              {tab === 'plan' && <PlanTab profile={profile} onProfileChange={setProfile} />}
             </div>
           )}
         </main>

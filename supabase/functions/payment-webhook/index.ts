@@ -1,141 +1,93 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Stripe from 'https://esm.sh/stripe@17';
 
-/** Chave usada no HMAC do header X-Webhook-Signature (na doc: "public HMAC key" do painel). */
-const WEBHOOK_HMAC_KEY = Deno.env.get('ABACATEPAY_WEBHOOK_SECRET')!;
-const SUPABASE_URL     = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_KEY      = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const STRIPE_SECRET_KEY     = Deno.env.get('STRIPE_SECRET_KEY')!;
+const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
+const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!;
+const SERVICE_KEY           = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-const PRO_DURATION_DAYS = 32;
-
-async function hmacSha256Base64(secret: string, message: string): Promise<string> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw', enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false, ['sign'],
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
-  const bytes = new Uint8Array(sig);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
-}
-
-function timingSafeEqualStrings(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
-/** Compat: doc antiga mostrava digest hex em alguns exemplos; mantém verificação opcional. */
-async function hmacSha256Hex(secret: string, message: string): Promise<string> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw', enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false, ['sign'],
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
-  return Array.from(new Uint8Array(sig))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
+const stripe = new Stripe(STRIPE_SECRET_KEY, {
+  apiVersion: '2024-06-20',
+  httpClient: Stripe.createFetchHttpClient(),
+});
 
 Deno.serve(async (req) => {
-  const signature = req.headers.get('x-webhook-signature') ?? '';
+  const signature = req.headers.get('stripe-signature') ?? '';
   const rawBody   = await req.text();
 
-  const expectedB64 = await hmacSha256Base64(WEBHOOK_HMAC_KEY, rawBody);
-  const expectedHex = await hmacSha256Hex(WEBHOOK_HMAC_KEY, rawBody);
-  const ok =
-    (signature.length > 0 && timingSafeEqualStrings(signature, expectedB64)) ||
-    (signature.length > 0 && timingSafeEqualStrings(signature, expectedHex));
-
-  if (!ok) {
-    console.warn('Assinatura inválida no webhook AbacatePay (esperado base64 ou hex HMAC-SHA256)');
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  let payload: Record<string, unknown>;
+  let event: Stripe.Event;
   try {
-    payload = JSON.parse(rawBody) as Record<string, unknown>;
-  } catch {
-    return new Response('Bad Request', { status: 400 });
-  }
-
-  const event = payload?.event as string | undefined;
-  if (!event) {
-    return new Response('ok', { status: 200 });
-  }
-
-  // v2: checkout.completed | v1: billing.paid (não existe billing.charged na doc)
-  const paidEvents = new Set(['checkout.completed', 'billing.paid', 'billing.charged']);
-  if (!paidEvents.has(event)) {
-    return new Response('ok', { status: 200 });
-  }
-
-  const data = payload?.data as Record<string, unknown> | undefined;
-  if (!data || typeof data !== 'object') {
-    return new Response('ok', { status: 200 });
-  }
-
-  let billingId: string | undefined;
-  let userId: string | undefined;
-
-  // Webhook v2 — checkout
-  const checkout = data.checkout as Record<string, unknown> | undefined;
-  if (checkout && typeof checkout === 'object') {
-    billingId = checkout.id as string | undefined;
-    userId =
-      (checkout.externalId as string | undefined) ||
-      (checkout.metadata as Record<string, unknown> | undefined)?.user_id as string | undefined;
-  }
-
-  // Webhook v1 — cobrança no root de data
-  if (!billingId) {
-    billingId = data.id as string | undefined;
-  }
-  if (!userId) {
-    userId =
-      (data.externalId as string | undefined) ||
-      (data.metadata as Record<string, unknown> | undefined)?.user_id as string | undefined;
-  }
-
-  // Fallback: billing aninhado (se a API enviar esse formato)
-  const billing = data.billing as Record<string, unknown> | undefined;
-  if (billing && typeof billing === 'object') {
-    billingId = billingId ?? (billing.id as string | undefined);
-    userId =
-      userId ||
-      (billing.externalId as string | undefined) ||
-      (billing.metadata as Record<string, unknown> | undefined)?.user_id as string | undefined;
-  }
-
-  if (!billingId || !userId) {
-    console.error('Webhook pago sem id de cobrança ou user (externalId/metadata):', event, JSON.stringify(data));
-    return new Response('Bad Request', { status: 400 });
+    event = await stripe.webhooks.constructEventAsync(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.warn('Assinatura inválida no webhook Stripe:', err);
+    return new Response('Unauthorized', { status: 401 });
   }
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + PRO_DURATION_DAYS);
+  // ── Assinatura ativada (checkout concluído) ───────────────────────────────
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const userId  = session.client_reference_id ?? (session.metadata?.user_id);
 
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      plan:               'pro',
-      pro_expires_at:     expiresAt.toISOString(),
-      abacate_billing_id: billingId,
-    })
-    .eq('id', userId);
+    if (!userId) {
+      console.error('Webhook checkout.session.completed sem user_id:', event.id);
+      return new Response('Bad Request', { status: 400 });
+    }
 
-  if (error) {
-    console.error('Erro ao atualizar perfil para PRO:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    const customerId      = typeof session.customer     === 'string' ? session.customer     : session.customer?.id;
+    const subscriptionId  = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
+
+    // Busca data de renovação da assinatura para exibir no dashboard
+    let proExpiresAt: string | null = null;
+    if (subscriptionId) {
+      try {
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        proExpiresAt = new Date(sub.current_period_end * 1000).toISOString();
+      } catch (e) {
+        console.warn('Não foi possível buscar current_period_end:', e);
+      }
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        plan:                   'pro',
+        stripe_customer_id:     customerId     ?? null,
+        stripe_subscription_id: subscriptionId ?? null,
+        pro_expires_at:         proExpiresAt,
+      })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Erro ao ativar PRO:', error);
+      return new Response('Internal Server Error', { status: 500 });
+    }
+
+    console.log(`PRO ativado: user_id=${userId} subscription=${subscriptionId}`);
   }
 
-  console.log(`PRO ativado: user_id=${userId} até ${expiresAt.toISOString()} (event=${event})`);
+  // ── Assinatura cancelada / expirada ───────────────────────────────────────
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object as Stripe.Subscription;
+    const userId       = subscription.metadata?.user_id;
+    const customerId   = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+
+    if (userId) {
+      await supabase
+        .from('profiles')
+        .update({ plan: 'free', stripe_subscription_id: null })
+        .eq('id', userId);
+      console.log(`PRO cancelado: user_id=${userId}`);
+    } else {
+      // fallback via customer_id caso metadata não esteja preenchido
+      await supabase
+        .from('profiles')
+        .update({ plan: 'free', stripe_subscription_id: null })
+        .eq('stripe_customer_id', customerId);
+      console.log(`PRO cancelado via stripe_customer_id=${customerId}`);
+    }
+  }
+
   return new Response('ok', { status: 200 });
 });

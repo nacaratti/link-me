@@ -9,7 +9,9 @@
       "WebSearch",
       "WebFetch(domain:docs.abacatepay.com)",
       "WebFetch(domain:abacatepay.readme.io)",
-      "WebFetch(domain:abacatepay.github.io)"
+      "WebFetch(domain:abacatepay.github.io)",
+      "Bash(cat /c/Users/davin/OneDrive/link-me/supabase/migrations/*.sql)",
+      "Bash(npx supabase:*)"
     ]
   }
 }

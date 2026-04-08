@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Crown, Check, ArrowLeft } from 'lucide-react';
+import { Loader2, Crown, Check, ArrowLeft, Lock, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ConstellationBackground from './ConstellationBackground';
 
 const C = {
   black:    '#000000',
   white:    '#e7e9ea',
-  blue:     '#1c9cf0',
   gray1:    '#17181c',
   gray2:    '#242628',
   muted:    '#72767a',
@@ -16,77 +15,44 @@ const C = {
   amberGlow:'rgba(245,158,11,0.25)',
 };
 
-const PRO_FEATURES = [
-  'Temas exclusivos animados (Beyhive, Aurora Boreal e mais)',
-  'Links ilimitados',
-  'Whatsapp flutuante no perfil',
-  'Tag de status personalizada',
-  'Botão flutuante personalizado',
-  'Novos temas todo mês',
+const FREE_FEATURES = [
+  'Página pública personalizada',
+  'Links limitados (5 links)',
+  'Temas gratuitos (10+)',
+  'Cores e fontes customizáveis',
+  'Status tag',
 ];
 
-function formatCPF(v: string) {
-  const d = v.replace(/\D/g, '').slice(0, 14);
-  if (d.length <= 11)
-    return d.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, (_,a,b,c,e) =>
-      [a, b, c].filter(Boolean).join('.') + (e ? '-' + e : ''));
-  return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, (_,a,b,c,d2,e) =>
-    `${a}.${b}.${c}/${d2}` + (e ? '-' + e : ''));
-}
+const PRO_FEATURES = [
+  'Tudo do plano grátis',
+  'Links ilimitados',
+  'Botão de WhatsApp flutuante',
+  'Temas animados exclusivos',
+  'Temas de vídeos exclusivos',
+  'Novos temas em primeira mão',
+  'Estatísticas de cliques',
+  'Suporte prioritário',
+];
 
-function formatPhone(v: string) {
-  const d = v.replace(/\D/g, '').slice(0, 11);
-  if (d.length <= 10)
-    return d.replace(/(\d{2})(\d{4})(\d{0,4})/, (_,a,b,c) =>
-      `(${a}) ${b}` + (c ? '-' + c : ''));
-  return d.replace(/(\d{2})(\d{5})(\d{0,4})/, (_,a,b,c) =>
-    `(${a}) ${b}` + (c ? '-' + c : ''));
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 14px',
-  background: 'rgba(255,255,255,0.05)',
-  border: `1px solid ${C.gray2}`,
-  borderRadius: 10,
-  outline: 'none',
-  fontSize: 15,
-  color: C.white,
-  fontFamily: "'Open Sans', sans-serif",
-  transition: 'border-color 0.2s',
-  boxSizing: 'border-box',
-};
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: 13,
-  fontWeight: 600,
-  color: C.muted,
-  marginBottom: 6,
-  fontFamily: "'Open Sans', sans-serif",
+const cardBase: React.CSSProperties = {
+  backdropFilter: 'blur(20px)',
+  borderRadius: 20,
+  padding: '28px 24px',
+  display: 'flex',
+  flexDirection: 'column',
 };
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const [taxId, setTaxId]   = useState('');
-  const [phone, setPhone]   = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleCheckout() {
     setError(null);
-
-    const cpf = taxId.replace(/\D/g, '');
-    if (cpf.length < 11) { setError('Informe um CPF ou CNPJ válido.'); return; }
-
-    const cel = phone.replace(/\D/g, '');
-    if (cel.length < 10) { setError('Informe um número de celular válido.'); return; }
-
     setLoading(true);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('payment-create', {
-        body: { taxId: cpf, cellphone: cel },
+        body: {},
       });
 
       if (fnError) throw new Error(fnError.message ?? 'Erro ao iniciar pagamento');
@@ -114,7 +80,7 @@ export default function CheckoutPage() {
     }}>
       <ConstellationBackground opacity={0.35} />
 
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 880, display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 960, display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* Back */}
         <button
@@ -127,158 +93,160 @@ export default function CheckoutPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center' }}>
           <img src="/logo_white.png" alt="linqu.es" style={{ height: 40, width: 'auto', margin: '0 auto 8px' }} />
-          <p style={{ fontSize: 13, color: C.muted }}>Assine o plano PRO</p>
+          <p style={{ fontSize: 13, color: C.muted }}>Escolha o seu plano</p>
         </div>
 
-        {/* Two column layout on desktop */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} className="checkout-cols">
-          <style>{`
-            @media (min-width: 640px) {
-              .checkout-cols { flex-direction: row !important; align-items: flex-start; }
-              .checkout-cols > * { flex: 1; }
-            }
-          `}</style>
+        {/* Three column layout on desktop */}
+        <style>{`
+          .checkout-cols { display: flex; flex-direction: column; gap: 16px; }
+          @media (min-width: 720px) {
+            .checkout-cols { flex-direction: row; align-items: stretch; }
+            .checkout-cols > * { flex: 1; }
+          }
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        `}</style>
 
-          {/* Left — Plan summary */}
+        <div className="checkout-cols">
+
+          {/* FREE card */}
           <div style={{
+            ...cardBase,
             background: 'rgba(23,24,28,0.82)',
-            backdropFilter: 'blur(20px)',
-            border: `1px solid ${C.amberGlow}`,
-            borderRadius: 20,
-            padding: '28px 24px',
+            border: `1px solid ${C.gray2}`,
           }}>
-            {/* Badge */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 12,
-                background: C.amberDim,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Crown size={22} color={C.amber} />
-              </div>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: C.white }}>linqu.es PRO</div>
-                <div style={{ fontSize: 13, color: C.muted }}>Plano mensal</div>
-              </div>
-            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: C.muted, textTransform: 'uppercase', marginBottom: 14 }}>Grátis</div>
 
-            {/* Price */}
-            <div style={{ marginBottom: 24, paddingBottom: 24, borderBottom: `1px solid ${C.gray2}` }}>
-              <span style={{ fontSize: 40, fontWeight: 900, color: C.amber }}>R$ 9</span>
-              <span style={{ fontSize: 24, fontWeight: 700, color: C.amber }}>,90</span>
-              <span style={{ fontSize: 14, color: C.muted }}> / mês</span>
+            <div style={{ marginBottom: 4 }}>
+              <span style={{ fontSize: 36, fontWeight: 900, color: C.white }}>R$ 0</span>
+              <span style={{ fontSize: 13, color: C.muted }}> / mês</span>
             </div>
+            <p style={{ fontSize: 12, color: C.muted, marginBottom: 24 }}>Para sempre. Sem cartão.</p>
 
-            {/* Features */}
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {PRO_FEATURES.map(f => (
-                <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: C.white }}>
-                  <Check size={16} color={C.amber} style={{ flexShrink: 0, marginTop: 2 }} />
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {FREE_FEATURES.map(f => (
+                <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: C.muted }}>
+                  <Check size={14} color='#4ade80' style={{ flexShrink: 0, marginTop: 2 }} />
+                  {f}
+                </li>
+              ))}
+              {/* itens que o free NÃO tem */}
+              {['Links ilimitados', 'WhatsApp flutuante', 'Temas animados e de vídeo'].map(f => (
+                <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#3a3d42' }}>
+                  <X size={14} color='#3a3d42' style={{ flexShrink: 0, marginTop: 2 }} />
                   {f}
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Right — Form */}
+          {/* PRO card */}
           <div style={{
-            background: 'rgba(23,24,28,0.82)',
-            backdropFilter: 'blur(20px)',
-            border: `1px solid ${C.gray2}`,
-            borderRadius: 20,
-            padding: '28px 24px',
+            ...cardBase,
+            background: 'linear-gradient(160deg, #0d1a0a 0%, #0a0700 100%)',
+            border: `1px solid ${C.amberGlow}`,
+            boxShadow: '0 0 40px rgba(245,158,11,0.07)',
+            position: 'relative',
+            overflow: 'hidden',
           }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: C.white, marginBottom: 6 }}>
-              Dados para cobrança
-            </h2>
-            <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>
-              Necessários para emissão da nota fiscal. Você será redirecionado para o checkout seguro da AbacatePay.
-            </p>
+            {/* Glow */}
+            <div style={{
+              position: 'absolute', top: -40, right: -40,
+              width: 180, height: 180,
+              background: 'radial-gradient(ellipse, rgba(245,158,11,0.14) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }} />
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label style={labelStyle}>CPF ou CNPJ</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={taxId}
-                  onChange={e => setTaxId(formatCPF(e.target.value))}
-                  placeholder="000.000.000-00"
-                  style={inputStyle}
-                  onFocus={e => (e.currentTarget.style.borderColor = C.amber)}
-                  onBlur={e => (e.currentTarget.style.borderColor = C.gray2)}
-                  required
-                />
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: C.amber, textTransform: 'uppercase' }}>PRO</div>
+              <div style={{ fontSize: 9, fontWeight: 800, background: C.amber, color: '#000', padding: '3px 7px', borderRadius: 100 }}>MAIS POPULAR</div>
+            </div>
 
-              <div>
-                <label style={labelStyle}>Celular com DDD</label>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  value={phone}
-                  onChange={e => setPhone(formatPhone(e.target.value))}
-                  placeholder="(11) 99999-9999"
-                  style={inputStyle}
-                  onFocus={e => (e.currentTarget.style.borderColor = C.amber)}
-                  onBlur={e => (e.currentTarget.style.borderColor = C.gray2)}
-                  required
-                />
-              </div>
+            <div style={{ marginBottom: 4 }}>
+              <span style={{ fontSize: 36, fontWeight: 900, color: C.white }}>R$ 9</span>
+              <span style={{ fontSize: 22, fontWeight: 800, color: C.white }}>,90</span>
+              <span style={{ fontSize: 13, color: C.muted }}> / mês</span>
+            </div>
+            <p style={{ fontSize: 12, color: C.muted, marginBottom: 24 }}>Cancele quando quiser.</p>
 
-              {error && (
-                <div style={{
-                  padding: '10px 14px',
-                  background: 'rgba(244,33,46,0.1)',
-                  border: '1px solid rgba(244,33,46,0.3)',
-                  borderRadius: 10,
-                  fontSize: 13,
-                  color: '#f87171',
-                }}>{error}</div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '14px 0',
-                  background: C.amber,
-                  border: 'none',
-                  borderRadius: 12,
-                  color: '#000',
-                  fontSize: 15,
-                  fontWeight: 800,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontFamily: "'Open Sans', sans-serif",
-                  opacity: loading ? 0.7 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  transition: 'opacity 0.2s, transform 0.15s',
-                  marginTop: 4,
-                }}
-                onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.88'; }}
-                onMouseLeave={e => { if (!loading) e.currentTarget.style.opacity = '1'; }}
-              >
-                {loading
-                  ? <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} />
-                  : <Crown size={18} />
-                }
-                {loading ? 'Aguarde...' : 'Ir para o checkout'}
-              </button>
-            </form>
-
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 16, textAlign: 'center', lineHeight: 1.6 }}>
-              Pagamento processado com segurança pela AbacatePay.<br />
-              Aceitamos PIX e cartão de crédito.
-            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {PRO_FEATURES.map(f => (
+                <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: C.white }}>
+                  <Check size={14} color={C.amber} style={{ flexShrink: 0, marginTop: 2 }} />
+                  {f}
+                </li>
+              ))}
+            </ul>
           </div>
+
+          {/* Checkout action card */}
+          <div style={{
+            ...cardBase,
+            background: 'rgba(23,24,28,0.82)',
+            border: `1px solid ${C.gray2}`,
+            justifyContent: 'center',
+            gap: 20,
+          }}>
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: C.white, marginBottom: 6 }}>
+                Pronto para assinar?
+              </h2>
+              <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>
+                Você será redirecionado para o checkout seguro do Stripe. Aceitamos cartão de crédito e PIX.
+              </p>
+            </div>
+
+            {error && (
+              <div style={{
+                padding: '10px 14px',
+                background: 'rgba(244,33,46,0.1)',
+                border: '1px solid rgba(244,33,46,0.3)',
+                borderRadius: 10,
+                fontSize: 13,
+                color: '#f87171',
+              }}>{error}</div>
+            )}
+
+            <button
+              onClick={handleCheckout}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '14px 0',
+                background: C.amber,
+                border: 'none',
+                borderRadius: 12,
+                color: '#000',
+                fontSize: 15,
+                fontWeight: 800,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontFamily: "'Open Sans', sans-serif",
+                opacity: loading ? 0.7 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.88'; }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.opacity = '1'; }}
+            >
+              {loading
+                ? <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} />
+                : <Crown size={18} />
+              }
+              {loading ? 'Aguarde...' : 'Assinar PRO — R$ 9,90/mês'}
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Lock size={12} color={C.muted} />
+              <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>
+                Pagamento seguro pelo Stripe
+              </p>
+            </div>
+          </div>
+
         </div>
       </div>
-
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

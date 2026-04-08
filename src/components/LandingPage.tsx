@@ -52,39 +52,76 @@ function LinqWordmark({ size = 22 }: { size?: number }) {
 }
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
-function Nav({ onCTA }: { onCTA: () => void }) {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
-  }, []);
+const NAV_LINKS = [
+  { label: 'Recursos',       href: '#recursos' },
+  { label: 'Como funciona',  href: '#como-funciona' },
+  { label: 'Planos',         href: '#planos' },
+];
 
+function scrollTo(href: string) {
+  const el = document.querySelector(href);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function Nav({ onCTA }: { onCTA: () => void }) {
   return (
     <motion.nav
       className="lp-nav"
-      initial={{ y: -20, opacity: 0 }}
+      initial={{ y: -24, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       style={{
         position: 'fixed',
-        top: 0, left: 0, right: 0,
+        top: 20,
+        left: 0,
+        right: 0,
+        margin: '0 auto',
+        width: 'calc(100% - 48px)',
+        maxWidth: 1000,
         zIndex: 100,
-        padding: '16px 32px',
+        padding: '14px 28px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: scrolled ? 'rgba(0,0,0,0.88)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        borderBottom: scrolled ? `1px solid ${C.gray2}` : '1px solid transparent',
-        transition: 'background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease',
+        background: 'rgba(24, 25, 28, 0.45)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: 16,
+        boxShadow: '0 2px 20px rgba(0,0,0,0.25)',
       }}
     >
+      {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <LinqIcon size={32} />
         <LinqWordmark size={20} />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+
+      {/* Links centrais */}
+      <div className="lp-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        {NAV_LINKS.map(({ label, href }) => (
+          <button
+            key={href}
+            onClick={() => scrollTo(href)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: C.mutedLt,
+              fontSize: 14,
+              cursor: 'pointer',
+              padding: '8px 14px',
+              fontFamily: "'Open Sans', sans-serif",
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = C.white)}
+            onMouseLeave={e => (e.currentTarget.style.color = C.mutedLt)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Ações */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button
           onClick={onCTA}
           style={{
@@ -94,6 +131,7 @@ function Nav({ onCTA }: { onCTA: () => void }) {
             fontSize: 14,
             cursor: 'pointer',
             padding: '8px 16px',
+            borderRadius: 8,
             fontFamily: "'Open Sans', sans-serif",
             transition: 'color 0.2s',
           }}
@@ -112,7 +150,7 @@ function Nav({ onCTA }: { onCTA: () => void }) {
             fontSize: 14,
             fontWeight: 600,
             cursor: 'pointer',
-            padding: '10px 20px',
+            padding: '10px 22px',
             borderRadius: 100,
             fontFamily: "'Open Sans', sans-serif",
             transition: 'transform 0.15s ease, box-shadow 0.15s ease',
@@ -619,7 +657,7 @@ function FeaturesSection() {
   const inView = useInView(ref, { once: true, margin: '-80px' });
 
   return (
-    <section className="lp-section-pad" style={{ padding: '100px 40px', maxWidth: 1200, margin: '0 auto' }}>
+    <section id="recursos" className="lp-section-pad" style={{ padding: '100px 40px', maxWidth: 1200, margin: '0 auto' }}>
       <SectionHeader
         tag="Recursos"
         title={<>Tudo o que você precisa.<br /><span style={{ color: C.blue }}>Nada do que não precisa.</span></>}
@@ -848,7 +886,7 @@ function HowItWorks() {
   const inView = useInView(ref, { once: true, margin: '-80px' });
 
   return (
-    <section className="lp-section-pad" style={{ padding: '100px 40px', maxWidth: 1200, margin: '0 auto' }}>
+    <section id="como-funciona" className="lp-section-pad" style={{ padding: '100px 40px', maxWidth: 1200, margin: '0 auto' }}>
       <SectionHeader
         tag="Como funciona"
         title={<>Três passos.<br /><span style={{ color: C.blue }}>Uma página incrível.</span></>}
@@ -976,25 +1014,25 @@ function PricingSection({ onCTA }: { onCTA: () => void }) {
 
   const freeFeatures = [
     'Página pública personalizada',
-    'Links ilimitados',
+    'Links limitados (5 links)',
     'Temas gratuitos (10+)',
     'Cores e fontes customizáveis',
-    'Botão WhatsApp flutuante',
-    'Status tag (Open to Work, etc)',
-    'Estatísticas de cliques',
+    'Status tag',
   ];
 
   const proFeatures = [
     'Tudo do plano grátis',
-    'Temas PRO animados (WebGL)',
-    'Temas de vídeo exclusivos',
-    'Temas profissionais por área',
+    'Links ilimitados',
+    'Botão de WhatsApp flutuante',
+    'Temas animados exclusivos',
+    'Temas de vídeos exclusivos',
     'Novos temas em primeira mão',
+    'Estatísticas de cliques',
     'Suporte prioritário',
   ];
 
   return (
-    <section className="lp-section-pad" style={{ padding: '100px 40px' }}>
+    <section id="planos" className="lp-section-pad" style={{ padding: '100px 40px' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <SectionHeader
           tag="Planos"
@@ -1006,7 +1044,7 @@ function PricingSection({ onCTA }: { onCTA: () => void }) {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: 16,
-          alignItems: 'start',
+          alignItems: 'stretch',
         }}>
 
           {/* FREE */}
@@ -1328,8 +1366,9 @@ export default function LandingPage() {
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
         @keyframes pulse-green { 0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,0.7)} 50%{box-shadow:0 0 0 4px rgba(22,163,74,0)} }
         @media (max-width: 767px) {
-          .lp-nav { padding: 12px 20px !important; }
+          .lp-nav { padding: 10px 16px !important; border-radius: 12px !important; }
           .lp-nav-login { display: none !important; }
+          .lp-nav-links { display: none !important; }
           .lp-hero { flex-direction: column !important; padding: 88px 20px 56px !important; gap: 32px !important; min-height: auto !important; }
           .lp-hero-phone { display: none !important; }
           .lp-hero-ctas { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }

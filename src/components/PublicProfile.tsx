@@ -55,6 +55,27 @@ export default function PublicProfile() {
 
   function handleLinkClick(linkId: number) {
     supabase.rpc('increment_link_clicks', { link_id: linkId });
+
+    // Log evento para estatísticas (disponível para todos, exibido apenas no PRO)
+    const ua = navigator.userAgent;
+    const device_type = /Mobi|Android/i.test(ua) ? 'mobile'
+                      : /Tablet|iPad/i.test(ua)   ? 'tablet'
+                      : 'desktop';
+    const rawReferrer = document.referrer;
+    let referrer: string | null = null;
+    if (rawReferrer) {
+      try { referrer = new URL(rawReferrer).hostname.replace(/^www\./, ''); }
+      catch { referrer = rawReferrer.slice(0, 100); }
+    }
+
+    if (profile?.id) {
+      supabase.from('link_click_events').insert({
+        link_id:    linkId,
+        profile_id: profile.id,
+        device_type,
+        referrer,
+      });
+    }
   }
 
   if (loading) {
