@@ -64,111 +64,224 @@ function scrollTo(href: string) {
 }
 
 function Nav({ onCTA }: { onCTA: () => void }) {
-  return (
-    <motion.nav
-      className="lp-nav"
-      initial={{ y: -24, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      style={{
-        position: 'fixed',
-        top: 20,
-        left: 0,
-        right: 0,
-        margin: '0 auto',
-        width: 'calc(100% - 48px)',
-        maxWidth: 1000,
-        zIndex: 100,
-        padding: '14px 28px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'rgba(24, 25, 28, 0.45)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: 16,
-        boxShadow: '0 2px 20px rgba(0,0,0,0.25)',
-      }}
-    >
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <LinqIcon size={32} />
-        <LinqWordmark size={20} />
-      </div>
+  const [menuOpen, setMenuOpen] = React.useState(false);
 
-      {/* Links centrais */}
-      <div className="lp-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {NAV_LINKS.map(({ label, href }) => (
+  return (
+    <>
+      <motion.nav
+        className="lp-nav"
+        initial={{ y: -24, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          position: 'fixed',
+          top: 20,
+          left: 0,
+          right: 0,
+          margin: '0 auto',
+          width: 'calc(100% - 24px)',
+          maxWidth: 1000,
+          zIndex: 100,
+          padding: '14px 28px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(24, 25, 28, 0.45)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRadius: 16,
+          boxShadow: '0 2px 20px rgba(0,0,0,0.25)',
+        }}
+      >
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <LinqIcon size={32} />
+          <LinqWordmark size={20} />
+        </div>
+
+        {/* Links centrais */}
+        <div className="lp-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {NAV_LINKS.map(({ label, href }) => (
+            <button
+              key={href}
+              onClick={() => scrollTo(href)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: C.mutedLt,
+                fontSize: 14,
+                cursor: 'pointer',
+                padding: '8px 14px',
+                fontFamily: "'Open Sans', sans-serif",
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = C.white)}
+              onMouseLeave={e => (e.currentTarget.style.color = C.mutedLt)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Ações desktop */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
-            key={href}
-            onClick={() => scrollTo(href)}
+            onClick={onCTA}
             style={{
               background: 'transparent',
               border: 'none',
               color: C.mutedLt,
               fontSize: 14,
               cursor: 'pointer',
-              padding: '8px 14px',
+              padding: '8px 16px',
+              borderRadius: 8,
               fontFamily: "'Open Sans', sans-serif",
               transition: 'color 0.2s',
             }}
+            className="lp-nav-login"
             onMouseEnter={e => (e.currentTarget.style.color = C.white)}
             onMouseLeave={e => (e.currentTarget.style.color = C.mutedLt)}
           >
-            {label}
+            Entrar
           </button>
-        ))}
-      </div>
+          <button
+            onClick={onCTA}
+            className="lp-nav-cta-desktop"
+            style={{
+              background: C.blue,
+              border: 'none',
+              color: '#ffffff',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              padding: '10px 22px',
+              borderRadius: 100,
+              fontFamily: "'Open Sans', sans-serif",
+              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              boxShadow: `0 0 0 0 ${C.blueGlow}`,
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = `0 0 20px ${C.blueGlow}`;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = `0 0 0 0 ${C.blueGlow}`;
+            }}
+          >
+            Criar grátis
+          </button>
 
-      {/* Ações */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button
-          onClick={onCTA}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: C.mutedLt,
-            fontSize: 14,
-            cursor: 'pointer',
-            padding: '8px 16px',
-            borderRadius: 8,
-            fontFamily: "'Open Sans', sans-serif",
-            transition: 'color 0.2s',
-          }}
-          className="lp-nav-login"
-          onMouseEnter={e => (e.currentTarget.style.color = C.white)}
-          onMouseLeave={e => (e.currentTarget.style.color = C.mutedLt)}
-        >
-          Entrar
-        </button>
-        <button
-          onClick={onCTA}
-          style={{
-            background: C.blue,
-            border: 'none',
-            color: '#ffffff',
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: 'pointer',
-            padding: '10px 22px',
-            borderRadius: 100,
-            fontFamily: "'Open Sans', sans-serif",
-            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-            boxShadow: `0 0 0 0 ${C.blueGlow}`,
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = `0 0 20px ${C.blueGlow}`;
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = `0 0 0 0 ${C.blueGlow}`;
-          }}
-        >
-          Criar grátis
-        </button>
-      </div>
-    </motion.nav>
+          {/* Hambúrguer — só mobile */}
+          <button
+            className="lp-nav-hamburger"
+            onClick={() => setMenuOpen(v => !v)}
+            style={{
+              display: 'none',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '6px',
+              color: C.white,
+              flexDirection: 'column',
+              gap: 5,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            aria-label="Menu"
+          >
+            <span style={{ display: 'block', width: 22, height: 2, background: C.white, borderRadius: 2, transition: 'transform 0.2s', transform: menuOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
+            <span style={{ display: 'block', width: 22, height: 2, background: C.white, borderRadius: 2, transition: 'opacity 0.2s', opacity: menuOpen ? 0 : 1 }} />
+            <span style={{ display: 'block', width: 22, height: 2, background: C.white, borderRadius: 2, transition: 'transform 0.2s', transform: menuOpen ? 'rotate(-45deg) translate(5px, -5px)' : 'none' }} />
+          </button>
+        </div>
+      </motion.nav>
+
+      {/* Menu dropdown mobile */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            className="lp-nav-mobile-menu"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              display: 'none',
+              position: 'fixed',
+              top: 80,
+              left: 0,
+              right: 0,
+              margin: '0 auto',
+              width: 'calc(100% - 24px)',
+              maxWidth: 600,
+              zIndex: 99,
+              background: 'rgba(24, 25, 28, 0.97)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderRadius: 14,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              padding: '12px 0',
+              flexDirection: 'column',
+            }}
+          >
+            {NAV_LINKS.map(({ label, href }) => (
+              <button
+                key={href}
+                onClick={() => { scrollTo(href); setMenuOpen(false); }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: C.white,
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  padding: '14px 24px',
+                  fontFamily: "'Open Sans', sans-serif",
+                  textAlign: 'left',
+                  width: '100%',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+            <div style={{ height: 1, background: C.gray2, margin: '8px 24px' }} />
+            <button
+              onClick={() => { onCTA(); setMenuOpen(false); }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: C.mutedLt,
+                fontSize: 16,
+                cursor: 'pointer',
+                padding: '14px 24px',
+                fontFamily: "'Open Sans', sans-serif",
+                textAlign: 'left',
+                width: '100%',
+              }}
+            >
+              Entrar
+            </button>
+            <button
+              onClick={() => { onCTA(); setMenuOpen(false); }}
+              style={{
+                background: C.blue,
+                border: 'none',
+                color: '#ffffff',
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: '12px 24px',
+                margin: '8px 16px 4px',
+                borderRadius: 100,
+                fontFamily: "'Open Sans', sans-serif",
+              }}
+            >
+              Criar grátis
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -1369,7 +1482,10 @@ export default function LandingPage() {
           .lp-nav { padding: 10px 16px !important; border-radius: 12px !important; }
           .lp-nav-login { display: none !important; }
           .lp-nav-links { display: none !important; }
-          .lp-hero { flex-direction: column !important; padding: 88px 20px 56px !important; gap: 32px !important; min-height: auto !important; }
+          .lp-nav-cta-desktop { display: none !important; }
+          .lp-nav-hamburger { display: flex !important; }
+          .lp-nav-mobile-menu { display: flex !important; }
+          .lp-hero { flex-direction: column !important; padding: 140px 20px 56px !important; gap: 32px !important; min-height: auto !important; }
           .lp-hero-phone { display: none !important; }
           .lp-hero-ctas { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
           .lp-hero-url { flex-wrap: wrap !important; }

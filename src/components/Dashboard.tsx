@@ -2609,6 +2609,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('links');
+  const [mobileSubTab, setMobileSubTab] = useState<'stats' | 'plan' | null>(null);
 
   const fetchProfile = useCallback(async () => {
     if (!user) return;
@@ -2650,7 +2651,10 @@ export default function Dashboard() {
     ...(profile.plan === 'pro' ? [{ id: 'plan' as Tab, label: 'Meu Plano', icon: CreditCard }] : []),
   ];
   const mobileTabs: { id: Tab; label: string; icon: any }[] = [
-    ...desktopTabs,
+    { id: 'links', label: 'Links', icon: LinkIcon },
+    { id: 'theme', label: 'Tema', icon: Layout },
+    { id: 'appearance', label: 'Aparência', icon: Palette },
+    { id: 'profile', label: 'Perfil', icon: Settings },
     { id: 'preview', label: 'Preview', icon: Smartphone },
   ];
 
@@ -2742,7 +2746,7 @@ export default function Dashboard() {
         {mobileTabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => setTab(id)}
+            onClick={() => { setTab(id); setMobileSubTab(null); }}
             style={{ touchAction: 'manipulation' }}
             className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 text-[10px] font-medium transition-colors ${
               tab === id ? 'text-primary' : 'text-muted-foreground'
@@ -2761,13 +2765,54 @@ export default function Dashboard() {
             <MobileFullPreview profile={profile} />
           ) : (
             <div className="max-w-lg mx-auto">
-              <h2 className="text-xl font-bold text-foreground mb-6">
-                {desktopTabs.find(t => t.id === tab)?.label}
+              <h2 className="text-xl font-bold text-foreground mb-4">
+                {tab === 'links' && mobileSubTab === 'stats' ? 'Estatísticas'
+                  : tab === 'profile' && mobileSubTab === 'plan' ? 'Meu Plano'
+                  : desktopTabs.find(t => t.id === tab)?.label}
               </h2>
-              {tab === 'links' && <LinksTab profile={profile} onProfileChange={setProfile} />}
+
+              {/* Mobile sub-tabs for Links */}
+              {tab === 'links' && profile.plan === 'pro' && (
+                <div className="md:hidden flex gap-1 mb-5 bg-muted rounded-xl p-1">
+                  <button
+                    onClick={() => setMobileSubTab(null)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${mobileSubTab !== 'stats' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" /> Links
+                  </button>
+                  <button
+                    onClick={() => setMobileSubTab('stats')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${mobileSubTab === 'stats' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                  >
+                    <BarChart2 className="w-3.5 h-3.5" /> Estatísticas
+                  </button>
+                </div>
+              )}
+
+              {/* Mobile sub-tabs for Perfil */}
+              {tab === 'profile' && profile.plan === 'pro' && (
+                <div className="md:hidden flex gap-1 mb-5 bg-muted rounded-xl p-1">
+                  <button
+                    onClick={() => setMobileSubTab(null)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${mobileSubTab !== 'plan' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                  >
+                    <Settings className="w-3.5 h-3.5" /> Perfil
+                  </button>
+                  <button
+                    onClick={() => setMobileSubTab('plan')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${mobileSubTab === 'plan' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5" /> Meu Plano
+                  </button>
+                </div>
+              )}
+
+              {tab === 'links' && mobileSubTab !== 'stats' && <LinksTab profile={profile} onProfileChange={setProfile} />}
+              {tab === 'links' && mobileSubTab === 'stats' && <StatsTab profile={profile} />}
               {tab === 'theme' && <ThemeTab profile={profile} onProfileChange={setProfile} />}
               {tab === 'appearance' && <AppearanceTab profile={profile} onProfileChange={setProfile} />}
-              {tab === 'profile' && <ProfileTab profile={profile} onProfileChange={setProfile} />}
+              {tab === 'profile' && mobileSubTab !== 'plan' && <ProfileTab profile={profile} onProfileChange={setProfile} />}
+              {tab === 'profile' && mobileSubTab === 'plan' && <PlanTab profile={profile} onProfileChange={setProfile} />}
               {tab === 'stats' && <StatsTab profile={profile} />}
               {tab === 'plan' && <PlanTab profile={profile} onProfileChange={setProfile} />}
             </div>
