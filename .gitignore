@@ -7,3 +7,5 @@ coverage/
 .env*
 !.env.example
 RELATORIO.md
+supabase/
+.claude/settings.local.json
