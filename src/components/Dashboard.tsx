@@ -4,7 +4,7 @@ import { Reorder } from 'motion/react';
 import {
   Plus, Trash2, GripVertical, ExternalLink, Settings,
   Link as LinkIcon, Layout, Loader2, LogOut, Eye, EyeOff, Save,
-  Check, Palette, X, Smartphone, ShieldCheck, Camera, Tag, Crown,
+  Check, Palette, X, Smartphone, ShieldCheck, Camera, Tag, Crown, Pencil,
   CreditCard, Calendar, AlertTriangle, CheckCircle,
   BarChart2, MousePointerClick, TrendingUp, Monitor, Tablet,
 } from 'lucide-react';
@@ -397,6 +397,11 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
   const [newIcon, setNewIcon] = useState('link');
   const [adding, setAdding] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editIcon, setEditIcon] = useState('link');
+  const [saving, setSaving] = useState(false);
   const [waNumber, setWaNumber] = useState(profile.whatsapp_number ?? '');
   const [waSaving, setWaSaving] = useState(false);
   const [waSaved, setWaSaved] = useState(false);
@@ -424,6 +429,38 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
       setShowSheet(false);
     }
     setAdding(false);
+  }
+
+  function startEdit(link: Link) {
+    setEditingId(link.id);
+    setEditTitle(link.title);
+    setEditUrl(link.url);
+    setEditIcon(link.icon_type);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingId) return;
+    setSaving(true);
+    const { error } = await supabase.from('links').update({
+      title: editTitle,
+      url: editUrl,
+      icon_type: editIcon,
+    }).eq('id', editingId);
+    if (!error) {
+      onProfileChange({
+        ...profile,
+        links: profile.links.map(l =>
+          l.id === editingId ? { ...l, title: editTitle, url: editUrl, icon_type: editIcon } : l
+        ),
+      });
+      setEditingId(null);
+    }
+    setSaving(false);
   }
 
   async function handleDelete(id: number) {
@@ -524,34 +561,91 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
       <Reorder.Group axis="y" values={profile.links} onReorder={handleReorder} className="space-y-2">
         {profile.links.map(link => {
           const Icon = ICON_MAP[link.icon_type] ?? ICON_MAP.link;
+          const isEditing = editingId === link.id;
           return (
             <Reorder.Item
               key={link.id}
               value={link}
-              className="flex items-center gap-3 bg-card rounded-xl border border-border px-3 py-3 shadow-sm cursor-grab active:cursor-grabbing"
+              className={`bg-card rounded-xl border border-border shadow-sm ${isEditing ? 'px-3 py-3' : 'flex items-center gap-3 px-3 py-3 cursor-grab active:cursor-grabbing'}`}
             >
-              <GripVertical className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-              <div className="p-1.5 rounded-lg bg-muted">
-                <Icon className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{link.title}</p>
-                <p className="text-xs text-muted-foreground truncate">{link.url}</p>
-              </div>
-              <button
-                onClick={() => handleToggle(link)}
-                style={{ touchAction: 'manipulation' }}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors"
-              >
-                {link.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={() => handleDelete(link.id)}
-                style={{ touchAction: 'manipulation' }}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              {isEditing ? (
+                <form onSubmit={handleSaveEdit} className="space-y-2">
+                  <input
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Título"
+                    value={editTitle}
+                    onChange={e => setEditTitle(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                  <input
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="URL (https://...)"
+                    type="url"
+                    value={editUrl}
+                    onChange={e => setEditUrl(e.target.value)}
+                    required
+                  />
+                  <div className="flex gap-2">
+                    <select
+                      className="flex-1 px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-card"
+                      value={editIcon}
+                      onChange={e => setEditIcon(e.target.value)}
+                    >
+                      {Object.keys(ICON_MAP).map(k => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/85 disabled:opacity-50 transition-colors"
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      Salvar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-border hover:bg-muted transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <GripVertical className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  <div className="p-1.5 rounded-lg bg-muted">
+                    <Icon className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{link.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+                  </div>
+                  <button
+                    onClick={() => startEdit(link)}
+                    style={{ touchAction: 'manipulation' }}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleToggle(link)}
+                    style={{ touchAction: 'manipulation' }}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors"
+                  >
+                    {link.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(link.id)}
+                    style={{ touchAction: 'manipulation' }}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </>
+              )}
             </Reorder.Item>
           );
         })}
@@ -2287,21 +2381,40 @@ interface ClickEvent {
   link_id: number;
 }
 
+interface ViewEvent {
+  viewed_at: string;
+  device_type: string | null;
+  referrer: string | null;
+}
+
 function StatsTab({ profile }: { profile: Profile }) {
-  const [events, setEvents]   = useState<ClickEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents]       = useState<ClickEvent[]>([]);
+  const [views, setViews]         = useState<ViewEvent[]>([]);
+  const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
     async function fetchEvents() {
       const since = new Date();
       since.setDate(since.getDate() - 29);
-      const { data } = await supabase
-        .from('link_click_events')
-        .select('clicked_at, device_type, link_id')
-        .eq('profile_id', profile.id)
-        .gte('clicked_at', since.toISOString())
-        .order('clicked_at', { ascending: false });
-      setEvents((data as ClickEvent[]) ?? []);
+      const sinceIso = since.toISOString();
+
+      const [clicksRes, viewsRes] = await Promise.all([
+        supabase
+          .from('link_click_events')
+          .select('clicked_at, device_type, link_id')
+          .eq('profile_id', profile.id)
+          .gte('clicked_at', sinceIso)
+          .order('clicked_at', { ascending: false }),
+        supabase
+          .from('profile_view_events')
+          .select('viewed_at, device_type, referrer')
+          .eq('profile_id', profile.id)
+          .gte('viewed_at', sinceIso)
+          .order('viewed_at', { ascending: false }),
+      ]);
+
+      setEvents((clicksRes.data as ClickEvent[]) ?? []);
+      setViews((viewsRes.data as ViewEvent[]) ?? []);
       setLoading(false);
     }
     fetchEvents();
@@ -2309,14 +2422,11 @@ function StatsTab({ profile }: { profile: Profile }) {
 
   // ── Derivações ───────────────────────────────────────────────────────────────
   const totalAllTime = profile.links.reduce((s, l) => s + (l.clicks ?? 0), 0);
-  const totalLast7   = events.filter(e => {
-    const d = new Date(e.clicked_at);
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
-    return d >= cutoff;
-  }).length;
+  const cutoff7 = new Date(); cutoff7.setDate(cutoff7.getDate() - 7);
+  const totalLast7   = events.filter(e => new Date(e.clicked_at) >= cutoff7).length;
+  const viewsLast7   = views.filter(v => new Date(v.viewed_at) >= cutoff7).length;
+  const conversionRate = viewsLast7 > 0 ? Math.round((totalLast7 / viewsLast7) * 100) : 0;
 
-  const topLink = [...profile.links].sort((a, b) => (b.clicks ?? 0) - (a.clicks ?? 0))[0];
-  const maxClicks = topLink?.clicks ?? 1;
 
   // Gráfico últimos 7 dias
   const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -2326,24 +2436,36 @@ function StatsTab({ profile }: { profile: Profile }) {
   });
   const clicksByDay = last7Days.map(day => ({
     label: new Date(day + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric' }),
-    count: events.filter(e => e.clicked_at.startsWith(day)).length,
+    clicks: events.filter(e => e.clicked_at.startsWith(day)).length,
+    views:  views.filter(v => v.viewed_at.startsWith(day)).length,
   }));
-  const maxDay = Math.max(...clicksByDay.map(d => d.count), 1);
+  const maxDay = Math.max(...clicksByDay.map(d => Math.max(d.clicks, d.views)), 1);
 
-  // Dispositivos (últimos 30 dias)
-  const deviceCounts = events.reduce<Record<string, number>>((acc, e) => {
-    const k = e.device_type ?? 'desktop';
+  // Dispositivos — visitas (últimos 30 dias)
+  const viewDeviceCounts = views.reduce<Record<string, number>>((acc, v) => {
+    const k = v.device_type ?? 'desktop';
     acc[k] = (acc[k] ?? 0) + 1;
     return acc;
   }, {});
-  const totalEvents = events.length;
+  const totalViews = views.length;
 
   const deviceList = [
     { key: 'mobile',  label: 'Mobile',  icon: Smartphone },
     { key: 'desktop', label: 'Desktop', icon: Monitor },
     { key: 'tablet',  label: 'Tablet',  icon: Tablet },
-  ].map(d => ({ ...d, count: deviceCounts[d.key] ?? 0, pct: totalEvents ? Math.round(((deviceCounts[d.key] ?? 0) / totalEvents) * 100) : 0 }))
+  ].map(d => ({ ...d, count: viewDeviceCounts[d.key] ?? 0, pct: totalViews ? Math.round(((viewDeviceCounts[d.key] ?? 0) / totalViews) * 100) : 0 }))
+
    .filter(d => d.count > 0);
+
+  // Origens de tráfego (últimos 30 dias)
+  const referrerCounts = views.reduce<Record<string, number>>((acc, v) => {
+    const k = v.referrer ?? 'Direto';
+    acc[k] = (acc[k] ?? 0) + 1;
+    return acc;
+  }, {});
+  const topReferrers = Object.entries(referrerCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
 
   if (loading) {
     return (
@@ -2356,37 +2478,49 @@ function StatsTab({ profile }: { profile: Profile }) {
   return (
     <div className="space-y-4">
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Total de cliques', value: totalAllTime, icon: MousePointerClick, sub: 'todos os tempos' },
-          { label: 'Últimos 7 dias',   value: totalLast7,   icon: TrendingUp,        sub: 'cliques recentes' },
-          { label: 'Links ativos',     value: profile.links.filter(l => l.is_active).length, icon: BarChart2, sub: 'publicados' },
+          { label: 'Visitas (7 dias)',  value: viewsLast7,   icon: Eye,              sub: 'ao perfil' },
+          { label: 'Cliques (7 dias)',  value: totalLast7,   icon: MousePointerClick, sub: 'nos links' },
+          { label: 'Conversão',         value: `${conversionRate}%`, icon: TrendingUp, sub: 'visitas → cliques' },
+          { label: 'Total de cliques',  value: totalAllTime, icon: BarChart2,         sub: 'todos os tempos' },
         ].map(({ label, value, icon: Icon, sub }) => (
           <div key={label} className="bg-card rounded-2xl border border-border p-4 shadow-sm flex flex-col gap-1">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Icon className="w-3.5 h-3.5" />
               <span className="text-[11px] font-medium">{label}</span>
             </div>
-            <p className="text-2xl font-bold text-foreground tabular-nums">{value.toLocaleString('pt-BR')}</p>
+            <p className="text-2xl font-bold text-foreground tabular-nums">{typeof value === 'number' ? value.toLocaleString('pt-BR') : value}</p>
             <p className="text-[10px] text-muted-foreground">{sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Gráfico 7 dias */}
+      {/* Gráfico 7 dias — visitas e cliques */}
       <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Cliques — últimos 7 dias</p>
-        {totalLast7 === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhum clique registrado nos últimos 7 dias.</p>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Últimos 7 dias</p>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block" />Visitas</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/40 inline-block" />Cliques</span>
+          </div>
+        </div>
+        {viewsLast7 === 0 && totalLast7 === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Nenhum dado nos últimos 7 dias.</p>
         ) : (
           <div className="flex items-end gap-1.5 h-28">
-            {clicksByDay.map(({ label, count }) => (
+            {clicksByDay.map(({ label, clicks, views: v }) => (
               <div key={label} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] tabular-nums text-muted-foreground">{count > 0 ? count : ''}</span>
-                <div
-                  className="w-full rounded-t-md bg-primary transition-all"
-                  style={{ height: `${Math.max((count / maxDay) * 80, count > 0 ? 4 : 0)}px` }}
-                />
+                <div className="w-full flex items-end gap-0.5" style={{ height: 80 }}>
+                  <div
+                    className="flex-1 rounded-t-sm bg-primary transition-all"
+                    style={{ height: `${Math.max((v / maxDay) * 80, v > 0 ? 4 : 0)}px` }}
+                  />
+                  <div
+                    className="flex-1 rounded-t-sm bg-primary/40 transition-all"
+                    style={{ height: `${Math.max((clicks / maxDay) * 80, clicks > 0 ? 4 : 0)}px` }}
+                  />
+                </div>
                 <span className="text-[9px] text-muted-foreground leading-tight text-center">{label}</span>
               </div>
             ))}
@@ -2403,43 +2537,43 @@ function StatsTab({ profile }: { profile: Profile }) {
           [...profile.links]
             .sort((a, b) => (b.clicks ?? 0) - (a.clicks ?? 0))
             .map(link => (
-              <div key={link.id} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-foreground truncate max-w-[70%]">{link.title || link.url}</span>
-                  <span className="text-muted-foreground tabular-nums font-medium shrink-0">
-                    {(link.clicks ?? 0).toLocaleString('pt-BR')} cliques
-                  </span>
-                </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${maxClicks > 0 ? ((link.clicks ?? 0) / maxClicks) * 100 : 0}%` }}
-                  />
-                </div>
+              <div key={link.id} className="flex items-center justify-between text-sm py-1">
+                <span className="text-foreground truncate max-w-[70%]">{link.title || link.url}</span>
+                <span className="text-muted-foreground tabular-nums font-medium shrink-0">
+                  {(link.clicks ?? 0).toLocaleString('pt-BR')} cliques
+                </span>
               </div>
             ))
         )}
       </div>
 
+      {/* Origens de tráfego */}
+      {topReferrers.length > 0 && (
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Origem das visitas — 30 dias</p>
+          {topReferrers.map(([source, count]) => (
+            <div key={source} className="flex items-center justify-between text-sm py-1">
+              <span className="text-foreground truncate max-w-[70%]">{source}</span>
+              <span className="text-muted-foreground tabular-nums font-medium shrink-0">{count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Dispositivos */}
       {deviceList.length > 0 && (
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dispositivos — últimos 30 dias</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dispositivos — visitas 30 dias</p>
           {deviceList.map(({ key, label, icon: Icon, count, pct }) => (
-            <div key={key} className="flex items-center gap-3">
-              <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
-              <div className="flex-1 space-y-0.5">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-foreground">{label}</span>
-                  <span className="text-muted-foreground tabular-nums">{pct}% · {count}</span>
-                </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
-                </div>
+            <div key={key} className="flex items-center justify-between text-sm py-1">
+              <div className="flex items-center gap-2">
+                <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-foreground">{label}</span>
               </div>
+              <span className="text-muted-foreground tabular-nums">{pct}% · {count}</span>
             </div>
           ))}
-          <p className="text-[10px] text-muted-foreground">Total de {totalEvents.toLocaleString('pt-BR')} eventos registrados</p>
+          <p className="text-[10px] text-muted-foreground">Total de {totalViews.toLocaleString('pt-BR')} visitas registradas</p>
         </div>
       )}
     </div>

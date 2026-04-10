@@ -11,6 +11,32 @@ import { ExternalLink, AlertCircle } from 'lucide-react';
 import type { Profile } from '../types';
 import WhatsappFloatingButton from './WhatsappFloatingButton';
 
+const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const SUPABASE_HEADERS = {
+  'apikey': SUPABASE_ANON,
+  'Authorization': `Bearer ${SUPABASE_ANON}`,
+  'Content-Type': 'application/json',
+};
+
+function beaconInsert(table: string, body: Record<string, unknown>) {
+  fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: SUPABASE_HEADERS,
+    body: JSON.stringify(body),
+    keepalive: true,
+  });
+}
+
+function beaconRpc(fn: string, body: Record<string, unknown>) {
+  fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: SUPABASE_HEADERS,
+    body: JSON.stringify(body),
+    keepalive: true,
+  });
+}
+
 export default function PublicProfile() {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -47,6 +73,22 @@ export default function PublicProfile() {
           const ct = customs.find(t => t.id === data.theme_id) ?? null;
           setCustomTheme(ct);
         }
+        // Registrar visita
+        const ua = navigator.userAgent;
+        const device_type = /Mobi|Android/i.test(ua) ? 'mobile'
+                          : /Tablet|iPad/i.test(ua)   ? 'tablet'
+                          : 'desktop';
+        const rawReferrer = document.referrer;
+        let referrer: string | null = null;
+        if (rawReferrer) {
+          try { referrer = new URL(rawReferrer).hostname.replace(/^www\./, ''); }
+          catch { referrer = rawReferrer.slice(0, 100); }
+        }
+        beaconInsert('profile_view_events', {
+          profile_id: data.id,
+          device_type,
+          referrer,
+        });
       }
       setLoading(false);
     }
@@ -54,9 +96,8 @@ export default function PublicProfile() {
   }, [username]);
 
   function handleLinkClick(linkId: number) {
-    supabase.rpc('increment_link_clicks', { link_id: linkId });
+    beaconRpc('increment_link_clicks', { link_id: linkId });
 
-    // Log evento para estatísticas (disponível para todos, exibido apenas no PRO)
     const ua = navigator.userAgent;
     const device_type = /Mobi|Android/i.test(ua) ? 'mobile'
                       : /Tablet|iPad/i.test(ua)   ? 'tablet'
@@ -69,7 +110,7 @@ export default function PublicProfile() {
     }
 
     if (profile?.id) {
-      supabase.from('link_click_events').insert({
+      beaconInsert('link_click_events', {
         link_id:    linkId,
         profile_id: profile.id,
         device_type,
