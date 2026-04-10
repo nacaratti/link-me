@@ -204,3 +204,12 @@
 }
 .tag-dot-pulse { animation: tag-dot-pulse 2s ease-in-out infinite; }
 .tag-fade-in   { animation: tag-fade-in 0.25s ease-out both; }
+
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

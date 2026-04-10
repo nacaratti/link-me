@@ -2793,7 +2793,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-muted flex">
+    <div className="h-screen overflow-hidden bg-muted flex">
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border hidden md:flex flex-col">
         <div className="p-6 border-b border-border flex flex-col items-center text-center">
@@ -2894,7 +2894,7 @@ export default function Dashboard() {
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        <main className={`flex-1 overflow-y-auto ${tab === 'preview' ? '' : 'p-6 pb-28 md:pb-6'}`}>
+        <main className={`flex-1 overflow-y-auto scrollbar-hide ${tab === 'preview' ? '' : 'p-6 pb-28 md:pb-6'}`}>
           {tab === 'preview' ? (
             <MobileFullPreview profile={profile} />
           ) : (
