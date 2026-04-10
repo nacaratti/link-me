@@ -651,6 +651,17 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         })}
       </Reorder.Group>
 
+      {/* Botão adicionar link — mobile only */}
+      <button
+        onClick={() => { if (!blocked) setShowSheet(true); }}
+        disabled={blocked}
+        style={{ touchAction: 'manipulation' }}
+        className="md:hidden w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-border rounded-xl text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary disabled:opacity-50 transition-colors"
+      >
+        <Plus className="w-4 h-4" />
+        Adicionar link
+      </button>
+
       {/* Limite de links */}
       {blocked && (
         <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
@@ -727,25 +738,11 @@ function LinksTab({ profile, onProfileChange }: { profile: Profile; onProfileCha
         )}
       </div>
 
-      {/* FAB — mobile only */}
-      <button
-        onClick={() => { if (!blocked) setShowSheet(true); }}
-        disabled={blocked}
-        style={{ touchAction: 'manipulation', bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
-        className="fixed right-4 z-40 md:hidden w-14 h-14 bg-primary hover:bg-primary/85 disabled:opacity-40 text-white rounded-full shadow-xl flex items-center justify-center transition-colors"
-        aria-label="Adicionar link"
-      >
-        <Plus className="w-7 h-7" />
-      </button>
-
-      {/* Bottom sheet — mobile only */}
+      {/* Modal centralizado — mobile only */}
       {showSheet && (
-        <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
+        <div className="fixed inset-0 z-50 md:hidden flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowSheet(false)} />
-          <div className="relative bg-card rounded-t-3xl px-5 pt-4 shadow-2xl"
-            style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
-          >
-            <div className="w-10 h-1 bg-[#D9D9D9] rounded-full mx-auto mb-4" />
+          <div className="relative w-full bg-card rounded-2xl px-5 pt-5 pb-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-foreground">Novo link</h3>
               <button
