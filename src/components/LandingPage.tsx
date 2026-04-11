@@ -454,14 +454,14 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
             margin: '0 0 24px',
           }}
         >
-          Seu agregador de links.<br />
+          Todos os seus links<br />
           <span style={{
             background: `linear-gradient(90deg, ${C.blue} 0%, #0ea5e9 100%)`,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
           }}>
-            Para Instagram, TikTok, WhatsApp e muito mais.
+            em um só lugar.
           </span>
         </motion.h1>
 
