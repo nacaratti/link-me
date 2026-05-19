@@ -59,6 +59,24 @@ Stored as plain values in `profiles` table (not JSON). Applied via **inline styl
 - Button border-radius from `button_style` (`rounded`/`pill`/`square`/`outline`)
 - `outline` style uses `bg-transparent` + border instead of `button_color`
 
+### Autonomous Agents
+
+Two autonomous agents run locally via Windows Task Scheduler + Claude CLI:
+
+- **Leopoldo (Dev Agent)**: `.claude/agent-dev.md` — runs Mon-Fri + Sun at 02:00 AM, implements kanban cards from Notion via MCP
+- **Geraldo (CEO Agent)**: `.claude/agent-ceo.md` — runs Saturday at 02:00 AM, plans weekly work, creates cards, sends Telegram report
+
+**Supporting scripts** (`scripts/`):
+- `run-dev-agent.bat`, `run-ceo-agent.bat`, `run-watchdog.bat` — batch launchers
+- `supabase-agent.mjs` — activity logging to Supabase (`activity_logs`, `agent_usage`, `weekly_focus` tables)
+- `telegram.mjs` — Telegram Bot API wrapper
+- `record-usage.mjs` — token/cost tracking after each agent run
+- `notify-failure.mjs` — Telegram alert on agent failure
+- `agent-watchdog.mjs` — daily check that agents ran (09:00 AM)
+- `setup-tasks.ps1` — registers Windows Scheduled Tasks (run as Admin once)
+
+**Docs**: `docs/AUTONOMY_POLICY.md` (what agents can/cannot do), `docs/CARD_CONTRACT.md` (card structure), `docs/RUNBOOK.md` (troubleshooting)
+
 ### Key conventions
 
 - `ICON_MAP` keys: `github`, `linkedin`, `globe`, `instagram`, `twitter`, `youtube`, `link`

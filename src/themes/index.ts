@@ -26,11 +26,23 @@ const BubblesBackground       = lazy(() => import('./bubbles/Background'));
 
 // ── Profissões ────────────────────────────────────────────────────────────────
 const AdvogadoBackground      = lazy(() => import('./advogado/Background'));
-const EleganceBackground      = lazy(() => import('./elegance/Background'));
 const MedicoBackground        = lazy(() => import('./medico/Background'));
 const DentistaBackground      = lazy(() => import('./dentista/Background'));
 const PsicologoBackground     = lazy(() => import('./psicologo/Background'));
 const DevBackground           = lazy(() => import('./dev/Background'));
+const ArquitetoBackground     = lazy(() => import('./arquiteto/Background'));
+const NutricionistaBackground = lazy(() => import('./nutricionista/Background'));
+const PersonalBackground      = lazy(() => import('./personal/Background'));
+const CoachBackground         = lazy(() => import('./coach/Background'));
+const FotografoBackground     = lazy(() => import('./fotografo/Background'));
+const DesignerBackground      = lazy(() => import('./designer/Background'));
+const ChefBackground          = lazy(() => import('./chef/Background'));
+const ImobiliariaBackground   = lazy(() => import('./imobiliaria/Background'));
+
+// ── Estáticos premium (multiuso) ─────────────────────────────────────────────
+const NoirBackground          = lazy(() => import('./noir/Background'));
+const LinenBackground         = lazy(() => import('./linen/Background'));
+const MarbleBackground        = lazy(() => import('./marble/Background'));
 
 export const THEMES: ThemeDefinition[] = [
   // ── Clássico ──────────────────────────────────────────────────────────────
@@ -248,52 +260,41 @@ export const THEMES: ThemeDefinition[] = [
   },
   // ── Profissões ──────────────────────────────────────────────────────────────
   {
-    id: 'elegance',
-    name: 'Advocacia Elegance',
-    description: 'Verde-esmeralda profundo com partículas e ornamentos em ouro antigo.',
-    previewStyle: { background: 'radial-gradient(ellipse at 50% 45%, #0a5044 0%, #053830 100%)' },
-    defaults: {
-      bg_color: '#053830', text_color: '#e8d9a8',
-      button_color: 'rgba(184,151,62,0.18)', button_text_color: '#c9a84c',
-      button_style: 'square', font_family: 'Playfair Display',
-    },
-    Background: EleganceBackground,
-    group: 'static',
-  },
-  {
     id: 'advogado',
     name: 'Advocacia',
-    description: 'Balanças da justiça e símbolos jurídicos flutuando em fundo navy e dourado.',
-    previewStyle: { background: 'linear-gradient(160deg,#0c1017 0%,#1a1408 100%)' },
+    description: 'Atmosfera de escritório jurídico — foto desfocada de biblioteca sobre fundo dark navy.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 40%, #141c2f 0%, #0a0f1c 100%)' },
     defaults: {
-      bg_color: '#0c1017', text_color: '#e8d5a3',
-      button_color: 'rgba(201,168,76,0.15)', button_text_color: '#c9a84c',
-      button_style: 'square', font_family: 'Playfair Display',
+      bg_color: '#0a0f1c', text_color: '#f5f5f5',
+      button_color: 'rgba(255,255,255,0.09)', button_text_color: '#ffffff',
+      button_style: 'soft', font_family: 'Montserrat',
     },
     Background: AdvogadoBackground,
+    bannerImage: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1600&q=85&auto=format&fit=crop',
+    bannerAccent: '#c9a84c',
     group: 'static',
   },
   {
     id: 'medico',
-    name: 'Medicina',
-    description: 'Linha de ECG animada e cruzes médicas em fundo clínico escuro.',
-    previewStyle: { background: 'linear-gradient(160deg,#041218 0%,#0a0a1a 100%)' },
+    name: 'Medicina Azure',
+    description: 'Navy profundo com foto de hospital, hélice de DNA, ECG brilhante e nós moleculares em ciano.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 0%, #0a2540 0%, #020c18 100%)' },
     defaults: {
-      bg_color: '#041218', text_color: '#f0f8ff',
-      button_color: 'rgba(229,62,62,0.15)', button_text_color: '#feb2b2',
-      button_style: 'rounded', font_family: 'Inter',
+      bg_color: '#020c18', text_color: '#e8f4f8',
+      button_color: 'rgba(56,189,248,0.10)', button_text_color: '#7dd3fc',
+      button_style: 'pill', font_family: 'DM Sans',
     },
     Background: MedicoBackground,
     group: 'static',
   },
   {
     id: 'dentista',
-    name: 'Odontologia',
-    description: 'Dentes e bolhas flutuando em fundo teal escuro com brilhos mint.',
-    previewStyle: { background: 'linear-gradient(160deg,#071a17 0%,#030f0d 100%)' },
+    name: 'Odontologia Pearl',
+    description: 'Pérola gradiente com padrão hexagonal de esmalte e acentos mint.',
+    previewStyle: { background: 'linear-gradient(135deg,#f0f4f8 0%,#e6f0ee 100%)' },
     defaults: {
-      bg_color: '#071a17', text_color: '#a8f0e0',
-      button_color: 'rgba(168,240,224,0.12)', button_text_color: '#a8f0e0',
+      bg_color: '#eef2ee', text_color: '#0f3d3a',
+      button_color: 'rgba(13,148,136,0.12)', button_text_color: '#0d7d75',
       button_style: 'pill', font_family: 'Josefin Sans',
     },
     Background: DentistaBackground,
@@ -301,12 +302,12 @@ export const THEMES: ThemeDefinition[] = [
   },
   {
     id: 'psicologo',
-    name: 'Psicologia',
-    description: 'Ondas cerebrais e símbolos da mente flutuando em fundo lilás profundo.',
-    previewStyle: { background: 'linear-gradient(160deg,#0f0a1e 0%,#1a0a2e 100%)' },
+    name: 'Psicologia Serene',
+    description: 'Areia quente com espiral áurea em terracota — sereno e acolhedor.',
+    previewStyle: { background: 'linear-gradient(160deg,#f5ede0 0%,#e8ddd0 100%)' },
     defaults: {
-      bg_color: '#0f0a1e', text_color: '#e9d8fd',
-      button_color: 'rgba(183,148,244,0.15)', button_text_color: '#d6bcfa',
+      bg_color: '#f1e8da', text_color: '#3a2a1c',
+      button_color: 'rgba(160,90,60,0.15)', button_text_color: '#7a3a25',
       button_style: 'soft', font_family: 'Raleway',
     },
     Background: PsicologoBackground,
@@ -314,15 +315,160 @@ export const THEMES: ThemeDefinition[] = [
   },
   {
     id: 'dev',
-    name: 'Desenvolvedor',
-    description: 'Chuva de código estilo Matrix com símbolos de programação em verde neon.',
-    previewStyle: { background: 'linear-gradient(160deg,#081208 0%,#020802 100%)' },
+    name: 'Desenvolvedor Terminal',
+    description: 'Graphite minimalista com grid técnico e símbolos de código em ciano.',
+    previewStyle: { background: 'linear-gradient(160deg,#0e1626 0%,#06080f 100%)' },
     defaults: {
-      bg_color: '#081208', text_color: '#00ff88',
-      button_color: 'rgba(0,255,136,0.1)', button_text_color: '#00ff88',
-      button_style: 'square', font_family: 'Orbitron',
+      bg_color: '#0a0e1a', text_color: '#e0f7fa',
+      button_color: 'rgba(34,211,238,0.10)', button_text_color: '#22d3ee',
+      button_style: 'square', font_family: 'Space Grotesk',
     },
     Background: DevBackground,
+    group: 'static',
+  },
+  {
+    id: 'arquiteto',
+    name: 'Arquitetura Blueprint',
+    description: 'Papel marfim com grade técnica e planta arquitetônica em grafite.',
+    previewStyle: { background: 'linear-gradient(160deg,#f4ede0 0%,#e8e0cf 100%)' },
+    defaults: {
+      bg_color: '#f4ede0', text_color: '#2a2418',
+      button_color: 'rgba(58,51,39,0.10)', button_text_color: '#3a3327',
+      button_style: 'square', font_family: 'Playfair Display',
+    },
+    Background: ArquitetoBackground,
+    group: 'static',
+  },
+  {
+    id: 'nutricionista',
+    name: 'Nutrição Verde',
+    description: 'Off-white sereno com folha estilizada e acentos sage green.',
+    previewStyle: { background: 'linear-gradient(180deg,#f7f9f4 0%,#eef2e6 100%)' },
+    defaults: {
+      bg_color: '#eef2e6', text_color: '#1f2d18',
+      button_color: 'rgba(90,122,74,0.14)', button_text_color: '#3a5a2a',
+      button_style: 'rounded', font_family: 'DM Sans',
+    },
+    Background: NutricionistaBackground,
+    group: 'static',
+  },
+  {
+    id: 'personal',
+    name: 'Personal Trainer',
+    description: 'Carvão escuro com linhas de movimento angulares e acento laranja-elétrico.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%, #2a1a14 0%, #0d0d0d 100%)' },
+    defaults: {
+      bg_color: '#1a1a1a', text_color: '#ffffff',
+      button_color: 'rgba(255,107,53,0.15)', button_text_color: '#ff6b35',
+      button_style: 'wave', font_family: 'Bebas Neue',
+    },
+    Background: PersonalBackground,
+    group: 'static',
+  },
+  {
+    id: 'coach',
+    name: 'Executive Coach',
+    description: 'Bordeaux profundo com monograma diamante em ouro fosco.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 30%, #5a1c2a 0%, #2a0712 100%)' },
+    defaults: {
+      bg_color: '#3a0e1a', text_color: '#f0e2c8',
+      button_color: 'rgba(201,168,107,0.18)', button_text_color: '#c9a86b',
+      button_style: 'square', font_family: 'Playfair Display',
+    },
+    Background: CoachBackground,
+    group: 'static',
+  },
+  {
+    id: 'fotografo',
+    name: 'Fotografia Mono',
+    description: 'Quase preto com grain de filme, frame branco fino e íris de diafragma.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%, #1a1a1a 0%, #050505 100%)' },
+    defaults: {
+      bg_color: '#0a0a0a', text_color: '#f0f0f0',
+      button_color: 'rgba(255,255,255,0.10)', button_text_color: '#ffffff',
+      button_style: 'square', font_family: 'Space Grotesk',
+    },
+    Background: FotografoBackground,
+    group: 'static',
+  },
+  {
+    id: 'designer',
+    name: 'Designer Bauhaus',
+    description: 'Branco com formas primárias Bauhaus — círculo, quadrado e triângulo.',
+    previewStyle: { background: 'linear-gradient(135deg,#fafaf7 0%,#efefe6 100%)' },
+    defaults: {
+      bg_color: '#fafaf7', text_color: '#1a1a1a',
+      button_color: 'rgba(26,26,26,0.08)', button_text_color: '#1a1a1a',
+      button_style: 'square', font_family: 'Space Grotesk',
+    },
+    Background: DesignerBackground,
+    group: 'static',
+  },
+  {
+    id: 'chef',
+    name: 'Gastronomia Plate',
+    description: 'Cinza pedra com talheres cruzados e acento cobre — refinamento gastronômico.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 30%, #3a3530 0%, #1a1614 100%)' },
+    defaults: {
+      bg_color: '#2a2522', text_color: '#f0e8dc',
+      button_color: 'rgba(184,115,51,0.18)', button_text_color: '#d49453',
+      button_style: 'soft', font_family: 'Playfair Display',
+    },
+    Background: ChefBackground,
+    group: 'static',
+  },
+  {
+    id: 'imobiliaria',
+    name: 'Real Estate Premium',
+    description: 'Antracite com colunas verticais douradas e silhueta de casa em champagne.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 30%, #242830 0%, #0f1218 100%)' },
+    defaults: {
+      bg_color: '#1a1d24', text_color: '#e8d8b8',
+      button_color: 'rgba(212,184,150,0.15)', button_text_color: '#d4b896',
+      button_style: 'square', font_family: 'Playfair Display',
+    },
+    Background: ImobiliariaBackground,
+    group: 'static',
+  },
+
+  // ── Estáticos premium (multiuso) ──────────────────────────────────────────
+  {
+    id: 'noir',
+    name: 'Noir',
+    description: 'Preto absoluto com fina linha de ouro horizontal — luxo silencioso.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 50%, #1a0e00 0%, #000000 100%)' },
+    defaults: {
+      bg_color: '#000000', text_color: '#f5e8c8',
+      button_color: 'rgba(201,168,76,0.15)', button_text_color: '#c9a84c',
+      button_style: 'square', font_family: 'Playfair Display',
+    },
+    Background: NoirBackground,
+    group: 'static',
+  },
+  {
+    id: 'linen',
+    name: 'Linen',
+    description: 'Off-white com textura de linho e acento sépia — orgânico e sofisticado.',
+    previewStyle: { background: 'linear-gradient(135deg,#f5efe4 0%,#ece4d2 100%)' },
+    defaults: {
+      bg_color: '#f5efe4', text_color: '#3a2a1c',
+      button_color: 'rgba(140,100,70,0.12)', button_text_color: '#6a4a2c',
+      button_style: 'soft', font_family: 'Lato',
+    },
+    Background: LinenBackground,
+    group: 'static',
+  },
+  {
+    id: 'marble',
+    name: 'Marble Luxe',
+    description: 'Mármore branco com veios cinza e acento ouro rosado — premium atemporal.',
+    previewStyle: { background: 'radial-gradient(ellipse at 50% 30%, #ffffff 0%, #d8d6d0 100%)' },
+    defaults: {
+      bg_color: '#f5f3ef', text_color: '#2a2520',
+      button_color: 'rgba(190,140,120,0.15)', button_text_color: '#8a5a4a',
+      button_style: 'rounded', font_family: 'Playfair Display',
+    },
+    Background: MarbleBackground,
     group: 'static',
   },
 

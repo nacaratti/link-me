@@ -303,11 +303,47 @@ function MobilePreview({ profile }: { profile: Profile }) {
         mediaType={customTheme?.media_type}
         themeId={profile.theme_id ?? 'default'}
       />
-      <div className="relative h-full overflow-y-auto" style={{ zIndex: 1 }}>
-        <div className="flex flex-col items-center py-10 px-4">
+      <div className="relative h-full overflow-y-auto flex flex-col" style={{ zIndex: 1 }}>
+        {theme.bannerImage && !customTheme && !profile.bg_image_url && (
+          <div className="relative w-full flex-shrink-0 overflow-hidden" style={{ height: 108 }}>
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url(${theme.bannerImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+            <div
+              className="absolute inset-x-0 top-0"
+              style={{
+                height: '40%',
+                background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 100%)',
+              }}
+            />
+            <div
+              className="absolute inset-x-0 bottom-0"
+              style={{
+                height: '50%',
+                background: `linear-gradient(180deg, transparent 0%, ${profile.bg_color}cc 70%, ${profile.bg_color} 100%)`,
+              }}
+            />
+            <div
+              className="absolute left-[10%] right-[10%]"
+              style={{
+                bottom: 0,
+                height: '1px',
+                background: `linear-gradient(90deg, transparent, ${theme.bannerAccent ?? 'rgba(255,255,255,0.5)'} 50%, transparent)`,
+                boxShadow: `0 0 14px ${theme.bannerAccent ?? 'rgba(255,255,255,0.4)'}66`,
+              }}
+            />
+          </div>
+        )}
+        <div className={`relative flex flex-col items-center px-4 flex-1 ${theme.bannerImage && !customTheme && !profile.bg_image_url ? 'pb-6' : 'py-10'}`} style={{ zIndex: 2 }}>
           <img
             src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`}
-            className="w-16 h-16 rounded-full border-4 border-white/20 shadow-md mb-2 object-cover"
+            className={`w-16 h-16 rounded-full border-4 shadow-md mb-2 object-cover ${theme.bannerImage && !customTheme && !profile.bg_image_url ? '-mt-8' : ''}`}
+            style={{ borderColor: profile.bg_color }}
             referrerPolicy="no-referrer"
           />
           <h1
@@ -364,6 +400,9 @@ function MobilePreview({ profile }: { profile: Profile }) {
                 </div>
               );
             })}
+          </div>
+          <div className="mt-auto pt-8 w-full flex justify-center">
+            <img src="/logo.png" alt="linqu.es" style={{ height: 22, width: 'auto', opacity: 0.3 }} />
           </div>
         </div>
       </div>

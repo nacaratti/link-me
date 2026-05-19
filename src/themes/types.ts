@@ -19,4 +19,8 @@ export interface ThemeDefinition {
   isPro?: boolean;
   /** Path to local thumbnail image (relative to /public), e.g. '/temas/mercurio.png' */
   thumbnail?: string;
+  /** URL of the hero banner image displayed at the top of the public profile (decorative only — text never overlays it) */
+  bannerImage?: string;
+  /** Accent color used for the thin line at the bottom of the banner (CSS color string) */
+  bannerAccent?: string;
 }

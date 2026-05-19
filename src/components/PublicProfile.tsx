@@ -148,9 +148,11 @@ export default function PublicProfile() {
     ? { border: `${btnBorderWidth}px solid ${profile.button_border_color ?? profile.button_text_color}` }
     : {};
 
+  const hasBanner = !!theme.bannerImage && !customTheme && !profile.bg_image_url;
+
   return (
     <div
-      className="min-h-screen relative overflow-hidden flex flex-col items-center py-10 sm:py-16 px-4"
+      className="min-h-screen relative overflow-hidden flex flex-col items-center"
       style={{
         backgroundColor: profile.bg_color,
         fontFamily: `'${profile.font_family}', sans-serif`,
@@ -284,18 +286,62 @@ export default function PublicProfile() {
         );
       })()}
 
+      {/* Hero banner — only when theme provides one and there's no custom bg image/video */}
+      {hasBanner && (
+        <div
+          className="relative w-full sm:max-w-[580px] sm:mt-4 sm:rounded-2xl overflow-hidden flex-shrink-0"
+          style={{ height: 180, zIndex: 1 }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${theme.bannerImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+          {/* Subtle dark veil at top for status-bar contrast */}
+          <div
+            className="absolute inset-x-0 top-0"
+            style={{
+              height: '40%',
+              background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 100%)',
+            }}
+          />
+          {/* Smooth fade to bg_color at the bottom edge so the banner blends into the page */}
+          <div
+            className="absolute inset-x-0 bottom-0"
+            style={{
+              height: '50%',
+              background: `linear-gradient(180deg, transparent 0%, ${profile.bg_color}cc 70%, ${profile.bg_color} 100%)`,
+            }}
+          />
+          {/* Accent line at the seam */}
+          <div
+            className="absolute left-[10%] right-[10%]"
+            style={{
+              bottom: 0,
+              height: '1px',
+              background: `linear-gradient(90deg, transparent, ${theme.bannerAccent ?? 'rgba(255,255,255,0.5)'} 50%, transparent)`,
+              boxShadow: `0 0 14px ${theme.bannerAccent ?? 'rgba(255,255,255,0.4)'}66`,
+            }}
+          />
+        </div>
+      )}
+
       {/* Content layer */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative w-full max-w-[580px] flex flex-col items-center"
+        className={`relative w-full max-w-[580px] flex-1 flex flex-col items-center px-4 pb-10 sm:pb-12 ${hasBanner ? '' : 'pt-10 sm:pt-16'}`}
         style={{ zIndex: 1 }}
       >
-        <div className="flex flex-col items-center mb-8 text-center">
+        <div className={`flex flex-col items-center mb-8 text-center ${hasBanner ? '-mt-12' : ''}`}>
           <img
             src={profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`}
             alt={profile.display_name}
-            className="w-24 h-24 rounded-full border-4 border-white/20 shadow-lg mb-4 object-cover"
+            className="w-24 h-24 rounded-full border-4 shadow-lg mb-4 object-cover"
+            style={{ borderColor: profile.bg_color }}
             referrerPolicy="no-referrer"
           />
           <h1
@@ -390,7 +436,10 @@ export default function PublicProfile() {
           })}
         </div>
 
-        <div className="mt-16 text-center" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div
+          className="mt-auto pt-16 w-full flex justify-center"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
           <a
             href="/entrar"
             className="inline-block opacity-30 hover:opacity-70 transition-opacity"
