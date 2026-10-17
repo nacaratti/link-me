@@ -15,11 +15,11 @@ ele deve adicionar o label e pular.
 
 ## ✅ O Dev Agent pode fazer sozinho
 
-- Editar código React/TypeScript/CSS em `src/`
+- Editar código React/TypeScript/CSS em `app/`, `components/` e `lib/`
 - Adicionar/modificar testes
 - Escrever scripts em `scripts/` que NÃO mexam em secrets
 - Commitar e dar push na `main` (deploy automático na Vercel)
-- Criar arquivos novos em `src/`, `docs/`
+- Criar arquivos novos em `app/`, `components/`, `lib/`, `docs/`
 - Criar/mover/atualizar cards no Notion via MCP
 
 ## ⚠️ Precisa de label `needs-human` (Dev pula)
@@ -36,7 +36,7 @@ ele deve adicionar o label e pular.
 
 ### Configuração e secrets
 - Modificar `.env.local`, `.env.example`
-- Modificar `vite.config.ts` de forma que afete build/deploy
+- Modificar `next.config.ts` ou `proxy.ts` de forma que afete build/deploy
 - Modificar `vercel.json`
 - Adicionar/remover env vars no Vercel
 

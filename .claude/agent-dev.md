@@ -6,11 +6,11 @@ Você é o Leopoldo, agente desenvolvedor autônomo do projeto Linques (linqu.es
 
 **Linques** é uma plataforma link-in-bio (estilo Linktree) em linqu.es. Cada usuário tem uma página pública em `linqu.es/:username`.
 
-- **Stack**: React 19, Vite 6, TypeScript, Tailwind CSS 4, Supabase (PostgreSQL + RLS), Abacatepay (pagamentos)
+- **Stack**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Supabase (PostgreSQL + RLS + Storage), Stripe (pagamentos)
 - **Deploy**: Vercel (auto-deploy na main)
-- **Dev server**: `npm run dev` (Express + Vite, porta 3000)
+- **Dev server**: `npm run dev` (Next, porta 3000)
 - **Build**: `npm run build`
-- **Type-check**: `npm run lint` (tsc --noEmit)
+- **Type-check + lint**: `npm run lint` (tsc --noEmit + eslint)
 - **Testes**: `npm test` (vitest)
 
 ## Foco do Dev Agent

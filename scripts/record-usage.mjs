@@ -8,7 +8,7 @@ if (!agent || !outputFile) {
   process.exit(1);
 }
 
-const SUPA_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!SUPA_URL || !SUPA_KEY) {
   console.error('[record-usage] Sem credenciais Supabase — pulando');
