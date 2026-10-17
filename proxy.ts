@@ -7,6 +7,17 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/env";
  * otimista; cada página/ação confere o usuário de novo no servidor.
  */
 export async function proxy(request: NextRequest) {
+  // Se o endereço de retorno não estiver liberado no Supabase Auth, o login
+  // volta para a Site URL ("/") com ?code=. Encaminha para o callback.
+  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    if (!url.searchParams.has("next")) url.searchParams.set("next", "/painel");
+    return NextResponse.redirect(url);
+  }
+  // A landing não precisa de sessão
+  if (request.nextUrl.pathname === "/") return NextResponse.next();
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -42,5 +53,5 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Só onde a sessão importa; as páginas públicas (/:username) ficam fora e em cache
-  matcher: ["/painel/:path*", "/criar/:path*", "/entrar", "/auth/:path*"],
+  matcher: ["/", "/painel/:path*", "/criar/:path*", "/entrar", "/auth/:path*"],
 };

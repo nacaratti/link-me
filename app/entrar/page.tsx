@@ -4,8 +4,8 @@ import AuthForm from "./AuthForm";
 
 export const metadata: Metadata = { title: "Entrar" };
 
-export default async function EntrarPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const { next } = await searchParams;
+export default async function EntrarPage({ searchParams }: { searchParams: Promise<{ next?: string; erro?: string }> }) {
+  const { next, erro } = await searchParams;
   const safe = next?.startsWith("/") && !next.startsWith("//") ? next : "/painel";
 
   return (
@@ -18,6 +18,11 @@ export default async function EntrarPage({ searchParams }: { searchParams: Promi
           <p className="t-label">Sua página em minutos</p>
           <h1 className="t-chapter mt-4 max-w-md">Responda algumas perguntas. A gente monta o resto.</h1>
           <div className="mt-10">
+            {erro && (
+              <p className="mb-6 max-w-sm rounded-xl bg-[#b42318]/10 px-4 py-3 text-sm text-[#b42318]">
+                Não conseguimos concluir o login. Tente de novo; se continuar, use outro navegador ou entre com e-mail.
+              </p>
+            )}
             <AuthForm next={safe} />
           </div>
         </div>
