@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import { Check, Copy, ExternalLink, Eye, X } from "lucide-react";
 import PageView from "@/components/page/PageView";
 import PhoneFrame from "@/components/page/PhoneFrame";
@@ -93,9 +94,9 @@ export default function Painel(props: {
       <div className="min-w-0">
         <header className="sticky top-0 z-10 border-b border-rule bg-bg/90 backdrop-blur">
           <div className="mx-auto flex max-w-2xl items-center gap-3 px-5 pt-4 sm:px-8">
-            <Link href="/" className="font-display text-xl">
-              linqu.es
-            </Link>
+            <Link href="/" aria-label="linqu.es" className="text-ink">
+          <Logo />
+        </Link>
             <div className="ml-auto flex min-w-0 items-center gap-1 rounded-full border border-rule bg-surface py-1 pl-4 pr-1 text-sm">
               <span className="truncate">{pageUrl}</span>
               <button type="button" onClick={copy} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-bg" aria-label="Copiar link">

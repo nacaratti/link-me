@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import AuthForm from "./AuthForm";
 
 export const metadata: Metadata = { title: "Entrar" };
@@ -11,8 +12,8 @@ export default async function EntrarPage({ searchParams }: { searchParams: Promi
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
       <section className="flex flex-col px-6 py-8 sm:px-12">
-        <Link href="/" className="font-display text-2xl">
-          linqu.es
+        <Link href="/" aria-label="linqu.es" className="text-ink">
+          <Logo />
         </Link>
         <div className="flex flex-1 flex-col justify-center py-12">
           <p className="t-label">Sua página em minutos</p>
@@ -31,7 +32,7 @@ export default async function EntrarPage({ searchParams }: { searchParams: Promi
           <Link href="/privacidade" className="underline">política de privacidade</Link>.
         </p>
       </section>
-      <aside className="tpl-editorial relative hidden overflow-hidden bg-[#12100e] lg:block">
+      <aside className="relative hidden overflow-hidden bg-[#12100e] lg:block">
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <p className="max-w-sm font-display text-4xl leading-tight text-[#faf7f2]">
             &ldquo;Quatro modelos, dez paletas. <span className="text-[#c9a961]">Nenhuma decisão difícil.</span>&rdquo;

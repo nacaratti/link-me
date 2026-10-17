@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import { ArrowLeft, Eye, X } from "lucide-react";
 import PageView from "@/components/page/PageView";
 import PhoneFrame from "@/components/page/PhoneFrame";
@@ -51,7 +52,7 @@ export function previewOf(d: Draft, plan: Plan, username: string): { profile: Pa
     plan,
   );
   return {
-    profile: { ...built.profile, id: "draft", username: username || "voce", plan },
+    profile: { ...built.profile, id: "draft", username: username || "voce", plan, font_id: null },
     blocks: built.blocks.map((b, i) => ({ ...b, id: `d${i}` }) as Block),
   };
 }
@@ -109,9 +110,9 @@ export default function Wizard({ userId, plan, username, initial }: WizardProps)
     <div className="min-h-screen lg:grid lg:grid-cols-[minmax(0,1fr)_480px]">
       <section className="flex min-h-screen flex-col">
         <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-rule bg-bg/90 px-5 py-4 backdrop-blur sm:px-8">
-          <Link href="/painel" className="font-display text-xl">
-            linqu.es
-          </Link>
+          <Link href="/painel" aria-label="linqu.es" className="text-ink">
+          <Logo />
+        </Link>
           <div className="ml-auto flex items-center gap-3">
             <span className="t-caption">
               {index + 1} de {steps.length}

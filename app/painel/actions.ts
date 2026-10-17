@@ -2,6 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { BLOCK_COLUMNS, pageTag } from "@/lib/data";
+import { FONT_PAIRS } from "@/lib/fontPairs";
 import { normalizeUrl, defaultTitle } from "@/lib/links";
 import { canUsePalette, canUseTemplate, planErrorMessage } from "@/lib/plans";
 import { requireUser } from "@/lib/session";
@@ -37,13 +38,14 @@ function cleanFeatured(d: FeaturedData): FeaturedData {
   };
 }
 
-export async function saveStyle(template_id: string, palette_id: string): Promise<Result> {
+export async function saveStyle(template_id: string, palette_id: string, font_id: string | null): Promise<Result> {
   const { supabase, user, profile } = await requireUser();
   if (!profile) return fail(undefined);
   if (!canUseTemplate(template_id, profile.plan)) return { ok: false, error: "Esse modelo é do plano PRO." };
   if (!canUsePalette(palette_id, profile.plan)) return { ok: false, error: "Essa paleta é do plano PRO." };
+  if (font_id && !FONT_PAIRS.some((f) => f.id === font_id)) return { ok: false, error: "Fonte desconhecida." };
 
-  const { error } = await supabase.from("profiles").update({ template_id, palette_id }).eq("id", user.id);
+  const { error } = await supabase.from("profiles").update({ template_id, palette_id, font_id }).eq("id", user.id);
   if (error) return fail(error.message);
   refresh(profile.username);
   return { ok: true, data: null };

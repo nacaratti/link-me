@@ -18,6 +18,7 @@ function base(p: Partial<PageProfile>): PageProfile {
     photos: [],
     template_id: "cartao",
     palette_id: "papel",
+    font_id: null,
     whatsapp_number: "",
     whatsapp_enabled: false,
     plan: "free",

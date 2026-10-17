@@ -8,7 +8,7 @@ import type { Block, PageProfile } from "@/lib/types";
  * não tem SELECT nas colunas do Stripe, então nunca usar select("*")).
  */
 export const PUBLIC_PROFILE_COLUMNS =
-  "id, username, display_name, headline, bio, avatar_url, photos, template_id, palette_id, whatsapp_number, whatsapp_enabled, plan";
+  "id, username, display_name, headline, bio, avatar_url, photos, template_id, palette_id, font_id, whatsapp_number, whatsapp_enabled, plan";
 
 export const BLOCK_COLUMNS = "id, type, data, sort_order, is_active, clicks";
 

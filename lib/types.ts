@@ -14,6 +14,8 @@ export interface PageProfile {
   photos: string[];
   template_id: string;
   palette_id: string;
+  /** Par de fontes (lib/fontPairs.ts); null = o padrão do modelo */
+  font_id: string | null;
   whatsapp_number: string;
   whatsapp_enabled: boolean;
   plan: Plan;

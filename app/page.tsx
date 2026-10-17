@@ -1,8 +1,8 @@
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import PageView from "@/components/page/PageView";
 import PhoneFrame from "@/components/page/PhoneFrame";
-import { PaletteSwatch } from "@/components/ui";
-import { PALETTES } from "@/lib/palettes";
+import TemplateCarousel from "@/components/landing/TemplateCarousel";
 import { FREE_LINK_LIMIT, PRO_LINK_LIMIT } from "@/lib/plans";
 import { SAMPLES } from "@/lib/samples";
 import { TEMPLATES } from "@/lib/templates";
@@ -24,8 +24,8 @@ export default function Home() {
   return (
     <div className="overflow-x-hidden">
       <header className="mx-auto flex max-w-6xl items-center px-5 py-5 sm:px-8">
-        <Link href="/" className="font-display text-2xl">
-          linqu.es
+        <Link href="/" aria-label="linqu.es" className="text-ink">
+          <Logo />
         </Link>
         <nav className="ml-auto flex items-center gap-2 text-sm">
           <Link href="/entrar" className="px-3 py-2 text-muted hover:text-ink">
@@ -99,36 +99,26 @@ export default function Home() {
           modelo quando quiser: seus links continuam lá.
         </p>
 
-        <div className="mt-14 grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-4">
-          {TEMPLATES.map((t) => {
+        <TemplateCarousel
+          slides={TEMPLATES.map((t) => {
             const s = sample(t.id);
-            return (
-              <div key={t.id}>
-                <div className="mx-auto w-fit">
-                  <PhoneFrame scale={0.6}>
-                    <PageView preview profile={{ ...s.profile, plan: "pro" }} blocks={s.blocks} />
-                  </PhoneFrame>
-                </div>
-                <h3 className="t-title mt-5">{t.name}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted">{t.description}</p>
-              </div>
-            );
+            return {
+              id: t.id,
+              name: t.name,
+              description: t.description,
+              phone: (
+                <PhoneFrame scale={0.72}>
+                  <PageView preview profile={{ ...s.profile, plan: "pro" }} blocks={s.blocks} />
+                </PhoneFrame>
+              ),
+            };
           })}
-        </div>
-
-        <div className="mt-16 flex flex-wrap gap-3">
-          {PALETTES.map((p) => (
-            <span key={p.id} className="inline-flex items-center gap-2 rounded-full border border-rule py-1 pl-1 pr-3 text-sm">
-              <PaletteSwatch id={p.id} />
-              {p.name}
-            </span>
-          ))}
-        </div>
+        />
       </section>
 
       {/* Planos */}
       <section className="bg-[#12100e] text-[#faf7f2]">
-        <div className="tpl-editorial mx-auto max-w-6xl px-5 py-24 sm:px-8">
+        <div className="mx-auto max-w-6xl px-5 py-24 sm:px-8">
           <p className="t-label !text-[#c9a961]">Planos</p>
           <h2 className="t-chapter mt-4">Comece grátis. Cresça quando precisar.</h2>
           <div className="mt-12 grid gap-5 md:grid-cols-2">
@@ -164,7 +154,7 @@ export default function Home() {
       </section>
 
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center gap-6 px-5 py-10 text-sm text-muted sm:px-8">
-        <span className="font-display text-lg text-ink">linqu.es</span>
+        <Logo className="text-ink" />
         <Link href="/termos" className="hover:text-ink">
           Termos
         </Link>

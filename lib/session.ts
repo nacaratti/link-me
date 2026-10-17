@@ -6,7 +6,7 @@ import type { PageProfile } from "@/lib/types";
 
 /** Colunas que o próprio usuário lê do perfil (ver grants da migração 100) */
 const OWN_PROFILE_COLUMNS =
-  "id, username, display_name, headline, bio, avatar_url, photos, template_id, palette_id, whatsapp_number, whatsapp_enabled, plan, pro_expires_at, onboarding_answers, onboarded_at";
+  "id, username, display_name, headline, bio, avatar_url, photos, template_id, palette_id, font_id, whatsapp_number, whatsapp_enabled, plan, pro_expires_at, onboarding_answers, onboarded_at";
 
 export interface OwnProfile extends PageProfile {
   pro_expires_at: string | null;

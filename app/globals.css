@@ -3,7 +3,7 @@
 /* ---------------------------------------------------------------
    Linques v2 — tokens
    As cores vêm da paleta (--p-*, ver lib/palettes.ts) e as fontes do
-   modelo (--f-*, classes .tpl-*). Nenhum componente usa cor solta.
+   par de fontes (--f-*, lib/fontPairs.ts). Nenhum componente usa cor solta.
    --------------------------------------------------------------- */
 
 @theme inline {
@@ -39,27 +39,7 @@
   color-scheme: light;
 }
 
-/* Fontes por modelo */
-.tpl-editorial {
-  --f-display: var(--font-bodoni), Georgia, serif;
-  --f-body: var(--font-archivo), system-ui, sans-serif;
-  --f-label: var(--font-plex-mono), ui-monospace, monospace;
-}
-.tpl-cartao {
-  --f-display: var(--font-jakarta), system-ui, sans-serif;
-  --f-body: var(--font-jakarta), system-ui, sans-serif;
-  --f-label: var(--font-jakarta), system-ui, sans-serif;
-}
-.tpl-vitrine {
-  --f-display: var(--font-fraunces), Georgia, serif;
-  --f-body: var(--font-inter), system-ui, sans-serif;
-  --f-label: var(--font-inter), system-ui, sans-serif;
-}
-.tpl-minimo {
-  --f-display: var(--font-geist), system-ui, sans-serif;
-  --f-body: var(--font-geist), system-ui, sans-serif;
-  --f-label: var(--font-geist-mono), ui-monospace, monospace;
-}
+/* As fontes de cada página vêm do par escolhido (lib/fontPairs.ts, em style) */
 
 html {
   -webkit-text-size-adjust: 100%;

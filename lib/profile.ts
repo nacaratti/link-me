@@ -12,6 +12,7 @@ export function rowToProfile(row: ProfileRow): PageProfile {
     bio: row.bio ?? "",
     avatar_url: row.avatar_url ?? "",
     photos: row.photos ?? [],
+    font_id: row.font_id ?? null,
     whatsapp_number: row.whatsapp_number ?? "",
   };
 }

@@ -1,5 +1,6 @@
 import type { Block, PageProfile } from "@/lib/types";
 import { getPalette, paletteVars } from "@/lib/palettes";
+import { fontVars, getFontPair } from "@/lib/fontPairs";
 import { getTemplate, type TemplateId } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import Editorial from "@/components/templates/Editorial";
@@ -33,13 +34,14 @@ export default function PageView({
 }) {
   const template = getTemplate(profile.template_id);
   const palette = getPalette(profile.palette_id);
+  const fonts = getFontPair(profile.font_id, template.defaultFont);
   const Template = COMPONENTS[template.id];
   const { links, featured } = splitBlocks(blocks);
 
   return (
     <div
       className={cn(`tpl-${template.id} relative min-h-full bg-bg font-sans text-ink`, className)}
-      style={paletteVars(palette)}
+      style={{ ...paletteVars(palette), ...fontVars(fonts) }}
     >
       <Template profile={profile} links={links} featured={featured} palette={palette} preview={preview} />
       {profile.whatsapp_enabled && profile.whatsapp_number && (

@@ -10,6 +10,8 @@ export interface TemplateInfo {
   description: string;
   /** Livre no plano gratuito */
   free: boolean;
+  /** Par de fontes padrão (lib/fontPairs.ts) */
+  defaultFont: string;
   /** Paleta que melhor mostra o modelo nas miniaturas */
   showcasePalette: string;
 }
@@ -19,6 +21,7 @@ export type TemplateId = "editorial" | "cartao" | "vitrine" | "minimo";
 export const TEMPLATES: TemplateInfo[] = [
   {
     id: "editorial",
+    defaultFont: "classica",
     name: "Editorial",
     description: "Foto grande em sangria, nome em serifa e links em linhas finas. Cara de encarte de disco.",
     free: true,
@@ -26,6 +29,7 @@ export const TEMPLATES: TemplateInfo[] = [
   },
   {
     id: "cartao",
+    defaultFont: "moderna",
     name: "Cartão",
     description: "Foto redonda no centro e botões cheios. O clássico link na bio, direto ao ponto.",
     free: true,
@@ -33,6 +37,7 @@ export const TEMPLATES: TemplateInfo[] = [
   },
   {
     id: "vitrine",
+    defaultFont: "elegante",
     name: "Vitrine",
     description: "Capa larga e destaques em grade com imagem. Para quem tem trabalho para mostrar.",
     free: false,
@@ -40,6 +45,7 @@ export const TEMPLATES: TemplateInfo[] = [
   },
   {
     id: "minimo",
+    defaultFont: "tecnica",
     name: "Mínimo",
     description: "Só tipografia. Sem foto grande, links em texto. Silencioso e rápido.",
     free: true,

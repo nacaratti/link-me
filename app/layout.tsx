@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   },
   description:
     "Responda algumas perguntas e ganhe uma página de links bonita, com modelos e paletas feitos por designers.",
-  icons: { icon: "/favicon.ico" },
 };
 
 export const viewport: Viewport = { themeColor: "#faf7f2" };

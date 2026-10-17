@@ -5,25 +5,28 @@ import { Check } from "lucide-react";
 import PageView from "@/components/page/PageView";
 import PhoneFrame from "@/components/page/PhoneFrame";
 import { PaletteSwatch, ProBadge } from "@/components/ui";
+import { FONT_PAIRS } from "@/lib/fontPairs";
 import { PALETTES } from "@/lib/palettes";
 import { canUsePalette, canUseTemplate } from "@/lib/plans";
 import { effectiveStyle } from "@/lib/profile";
-import { TEMPLATES } from "@/lib/templates";
+import { TEMPLATES, getTemplate } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { saveStyle } from "../actions";
 import type { PanelCtx } from "../Painel";
 
-/** Só duas escolhas: o modelo e a paleta. Nada de cor por item. */
+/** Três escolhas fechadas: modelo, fontes e paleta. Nada de cor por item. */
 export default function StyleTab({ profile, setProfile, blocks, toast }: PanelCtx) {
   const shown = effectiveStyle(profile);
   const [saving, setSaving] = useState(false);
+  const templateFont = getTemplate(shown.template_id).defaultFont;
+  const activeFont = profile.font_id ?? templateFont;
 
-  async function choose(patch: { template_id?: string; palette_id?: string }) {
+  async function choose(patch: { template_id?: string; palette_id?: string; font_id?: string | null }) {
     const prev = profile;
     const next = { ...profile, ...patch };
     setProfile(next);
     setSaving(true);
-    const res = await saveStyle(next.template_id, next.palette_id);
+    const res = await saveStyle(next.template_id, next.palette_id, next.font_id);
     setSaving(false);
     if (!res.ok) {
       setProfile(prev);
@@ -63,6 +66,44 @@ export default function StyleTab({ profile, setProfile, blocks, toast }: PanelCt
                   {active && <Check className="ml-auto h-4 w-4" />}
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-muted">{t.description}</p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="t-title">Fontes</h2>
+        <p className="mt-1 text-sm text-muted">Título, texto e legenda escolhidos juntos. Cada modelo já vem com um par.</p>
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {FONT_PAIRS.map((f) => {
+            const active = activeFont === f.id;
+            const isDefault = f.id === templateFont;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                disabled={saving}
+                // Escolher o par padrão do modelo volta a seguir o modelo (null)
+                onClick={() => choose({ font_id: isDefault ? null : f.id })}
+                className={cn(
+                  "rounded-2xl border p-3 text-left transition-colors",
+                  active ? "border-ink bg-surface" : "border-rule hover:border-ink",
+                )}
+              >
+                <span className="flex items-baseline justify-between gap-2">
+                  <span style={{ fontFamily: f.display }} className="text-2xl leading-none">
+                    Aa
+                  </span>
+                  {active && <Check className="h-4 w-4" />}
+                </span>
+                <span style={{ fontFamily: f.body }} className="mt-2 block text-sm font-medium">
+                  {f.name}
+                </span>
+                <span style={{ fontFamily: f.label }} className="block text-[0.7rem] text-muted">
+                  {f.description}
+                  {isDefault && " · padrão"}
+                </span>
               </button>
             );
           })}

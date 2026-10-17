@@ -3,6 +3,7 @@ import { canUsePalette, canUseTemplate, linkLimitReached, planErrorMessage, FREE
 import { PALETTES } from "../palettes";
 import { TEMPLATES } from "../templates";
 import { effectiveStyle } from "../profile";
+import { FONT_PAIRS, getFontPair } from "../fontPairs";
 import { SAMPLES } from "../samples";
 
 describe("planos", () => {
@@ -22,6 +23,12 @@ describe("planos", () => {
   it("tem 4 paletas e 3 modelos livres (iguais aos da migração 100)", () => {
     expect(PALETTES.filter((p) => p.free).map((p) => p.id).sort()).toEqual(["grafite", "oceano", "papel", "terracota"]);
     expect(TEMPLATES.filter((t) => t.free).map((t) => t.id).sort()).toEqual(["cartao", "editorial", "minimo"]);
+  });
+
+  it("pares de fontes iguais aos da migração 101 e padrões dos modelos válidos", () => {
+    expect(FONT_PAIRS.map((f) => f.id)).toEqual(["classica", "moderna", "elegante", "tecnica", "literaria", "geometrica"]);
+    for (const t of TEMPLATES) expect(getFontPair(null, t.defaultFont).id).toBe(t.defaultFont);
+    expect(getFontPair("inexistente", "moderna").id).toBe("moderna");
   });
 
   it("traduz erros dos triggers", () => {
