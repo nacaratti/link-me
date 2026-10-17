@@ -94,7 +94,7 @@ export default function Home() {
       </section>
 
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center gap-6 px-5 py-10 text-sm text-muted sm:px-8">
-        <Logo className="text-ink" />
+        <Logo withName className="text-ink" />
         <Link href="/termos" className="hover:text-ink">
           Termos
         </Link>

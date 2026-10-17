@@ -67,13 +67,14 @@ export default function Hero() {
         <Link href="/" aria-label="linqu.es">
           <Logo />
         </Link>
-        <nav className="ml-auto flex items-center gap-1 text-sm">
-          <Link href="/entrar" className="px-3 py-2 opacity-70 transition-opacity hover:opacity-100">
+        {/* Na mesma serifa do título, para o cabeçalho conversar com a abertura */}
+        <nav className="ml-auto flex items-center gap-5 font-display text-[1.05rem] leading-none tracking-tight">
+          <Link href="/entrar" className="link-rule pb-1 opacity-75 transition-opacity hover:opacity-100">
             Entrar
           </Link>
           <Link
             href="/entrar"
-            className="hidden rounded-full border border-current px-4 py-2 font-medium transition-colors sm:inline-block"
+            className="rounded-full bg-ink px-4 py-2.5 text-bg transition-[background-color,color,opacity] duration-700 hover:opacity-90"
           >
             Criar conta
           </Link>
