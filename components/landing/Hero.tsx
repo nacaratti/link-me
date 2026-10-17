@@ -63,23 +63,29 @@ export default function Hero() {
       style={paletteVars(palette)}
       className="relative overflow-hidden bg-bg text-ink transition-[background-color,color] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
     >
-      <header className="relative z-10 mx-auto flex max-w-6xl items-center px-5 py-5 sm:px-8">
-        <Link href="/" aria-label="linqu.es">
-          <Logo />
-        </Link>
-        {/* Na mesma serifa do título, para o cabeçalho conversar com a abertura */}
-        <nav className="ml-auto flex items-center gap-5 font-display text-[1.05rem] leading-none tracking-tight">
-          <Link href="/entrar" className="link-rule pb-1 opacity-75 transition-opacity hover:opacity-100">
-            Entrar
+      {/* Cabeçalho flutuante em pílula; o fundo translúcido acompanha a paleta do exemplo */}
+      <div className="relative z-10 mx-auto max-w-6xl px-3 pt-3 sm:px-6 sm:pt-5">
+        <header className="flex items-center rounded-full border border-rule bg-surface/70 py-2 pl-2.5 pr-2 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.25)] backdrop-blur-md transition-[background-color,border-color] duration-700">
+          <Link href="/" aria-label="linqu.es" className="rounded-xl">
+            <Logo />
           </Link>
-          <Link
-            href="/entrar"
-            className="rounded-full bg-ink px-4 py-2.5 text-bg transition-[background-color,color,opacity] duration-700 hover:opacity-90"
-          >
-            Criar conta
-          </Link>
-        </nav>
-      </header>
+          {/* Na mesma serifa do título, para o cabeçalho conversar com a abertura */}
+          <nav className="ml-auto flex items-center gap-1.5 font-display text-[1.05rem] leading-none tracking-tight">
+            <Link
+              href="/entrar"
+              className="rounded-full px-4 py-2.5 transition-colors duration-300 hover:bg-bg/70"
+            >
+              Entrar
+            </Link>
+            <Link
+              href="/entrar"
+              className="rounded-full bg-ink px-4 py-2.5 text-bg transition-[background-color,color,opacity] duration-700 hover:opacity-90 sm:px-5"
+            >
+              Criar conta
+            </Link>
+          </nav>
+        </header>
+      </div>
 
       <div className="relative mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-10 px-5 pb-16 pt-6 sm:px-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-6 lg:pb-24 lg:pt-12">
         <div>
