@@ -10,17 +10,6 @@ import { TEMPLATES } from "@/lib/templates";
 
 const sample = (template: string) => SAMPLES.find((s) => s.profile.template_id === template)!;
 
-function Cta({ children = "Criar minha página" }: { children?: React.ReactNode }) {
-  return (
-    <Link
-      href="/entrar"
-      className="inline-flex h-13 items-center rounded-full bg-ink px-7 py-3.5 font-medium text-bg transition-opacity hover:opacity-85"
-    >
-      {children}
-    </Link>
-  );
-}
-
 export default function Home() {
   return (
     <div className="overflow-x-hidden">
