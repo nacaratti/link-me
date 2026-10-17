@@ -105,14 +105,15 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-        checked ? "bg-accent" : "bg-rule",
+        "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200",
+        checked ? "bg-accent" : "bg-ink/20",
       )}
     >
+      {/* Trilho 44px, bolinha 20px com 2px de folga: desliza 20px */}
       <span
         className={cn(
-          "absolute top-0.5 h-5 w-5 rounded-full bg-bg shadow transition-transform",
-          checked ? "translate-x-[1.375rem]" : "translate-x-0.5",
+          "h-5 w-5 rounded-full bg-white shadow-sm shadow-black/25 transition-transform duration-200 ease-out",
+          checked ? "translate-x-5" : "translate-x-0",
         )}
       />
     </button>
