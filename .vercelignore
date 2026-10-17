@@ -1,0 +1,9 @@
+# Nunca enviar segredos nem material local no deploy pela CLI
+.env
+.env.*
+!.env.example
+supabase/
+RELATORIO.md
+.claude/
+scripts/
+*.tsbuildinfo
