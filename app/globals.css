@@ -206,3 +206,15 @@ body {
 .legal a {
   text-decoration: underline;
 }
+
+/* --- Cursor do endereço na abertura ------------------------------ */
+
+.caret {
+  animation: caret 1.05s steps(1) infinite;
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}

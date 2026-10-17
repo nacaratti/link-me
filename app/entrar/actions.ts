@@ -41,13 +41,16 @@ async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
 async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   const supabase = await createClient();
   const origin = (await headers()).get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL;
+  // Conta nova sempre passa pelo questionário; mantém o ?u= vindo da landing
+  const next = safeNext(form.get("next"));
+  const dest = next.startsWith("/criar") ? next : "/criar";
   const { data, error } = await supabase.auth.signUp({
     email: String(form.get("email") ?? "").trim(),
     password: String(form.get("password") ?? ""),
-    options: { emailRedirectTo: `${origin}/auth/callback?next=/criar` },
+    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(dest)}` },
   });
   if (error) return { error: translate(error.message) };
   // Com confirmação de e-mail ligada no Supabase, ainda não há sessão
   if (!data.session) return { info: "Enviamos um link de confirmação para o seu e-mail." };
-  redirect("/criar");
+  redirect(dest);
 }

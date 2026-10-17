@@ -55,8 +55,8 @@ export default function TemplateCarousel({
       </div>
 
       <div className="text-center md:text-left" aria-live="polite">
-        <p className="t-label">
-          Modelo {index + 1} de {count}
+        <p className="text-sm text-muted">
+          {index + 1} de {count}
         </p>
         <h3 key={current.id} className="rise t-chapter mt-3">
           {current.name}
