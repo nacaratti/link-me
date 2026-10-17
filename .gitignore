@@ -9,7 +9,7 @@ Thumbs.db
 .env*
 !.env.example
 RELATORIO.md
-supabase/
+/supabase/
 .claude/settings.local.json
 # Next.js
 .next/

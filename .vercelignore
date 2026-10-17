@@ -2,7 +2,7 @@
 .env
 .env.*
 !.env.example
-supabase/
+/supabase/
 RELATORIO.md
 .claude/
 scripts/
