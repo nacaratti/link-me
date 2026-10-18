@@ -17,11 +17,15 @@ import { cn } from "@/lib/utils";
 const TYPE_MS = 70; // por letra
 const HOLD_MS = 2600; // endereço completo na tela
 
+// A abertura fica sempre com a cara do primeiro exemplo (marina.sax: Latão + Clássica)
+const BASE = SAMPLES[0].profile;
+const palette = getPalette(BASE.palette_id);
+const font = getFontPair(BASE.font_id, getTemplate(BASE.template_id).defaultFont);
+
 /**
- * Abertura que se veste com as páginas dos clientes: o endereço de cada
- * exemplo é digitado na fonte do modelo dele, e a seção inteira (fundo,
- * texto, destaque) assume a paleta daquela página. É a demonstração de
- * "modelo + paleta + fontes" sem precisar explicar.
+ * Abertura: o endereço de cada exemplo é digitado em letras grandes e o
+ * celular ao lado mostra a página dele. Paleta e fontes da seção ficam
+ * fixas; só o nome e o celular mudam.
  */
 export default function Hero() {
   const router = useRouter();
@@ -29,10 +33,7 @@ export default function Hero() {
   const [typed, setTyped] = useState(SAMPLES[0].profile.username.length);
   const [claim, setClaim] = useState("");
 
-  const sample = SAMPLES[index];
-  const name = sample.profile.username;
-  const palette = getPalette(sample.profile.palette_id);
-  const font = getFontPair(sample.profile.font_id, getTemplate(sample.profile.template_id).defaultFont);
+  const name = SAMPLES[index].profile.username;
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -61,11 +62,11 @@ export default function Hero() {
   return (
     <section
       style={paletteVars(palette)}
-      className="relative overflow-hidden bg-bg text-ink transition-[background-color,color] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+      className="relative overflow-hidden bg-bg text-ink"
     >
-      {/* Cabeçalho flutuante em pílula; o fundo translúcido acompanha a paleta do exemplo */}
+      {/* Cabeçalho flutuante em pílula */}
       <div className="relative z-10 mx-auto max-w-6xl px-3 pt-3 sm:px-6 sm:pt-5">
-        <header className="flex items-center rounded-full border border-rule bg-surface/70 py-2 pl-2.5 pr-2 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.25)] backdrop-blur-md transition-[background-color,border-color] duration-700">
+        <header className="flex items-center rounded-full border border-rule bg-surface/70 py-2 pl-2.5 pr-2 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.25)] backdrop-blur-md">
           <Link href="/" aria-label="linqu.es" className="rounded-xl">
             <Logo />
           </Link>
@@ -79,7 +80,7 @@ export default function Hero() {
             </Link>
             <Link
               href="/entrar"
-              className="rounded-full bg-ink px-4 py-2.5 text-bg transition-[background-color,color,opacity] duration-700 hover:opacity-90 sm:px-5"
+              className="rounded-full bg-ink px-4 py-2.5 text-bg transition-opacity hover:opacity-90 sm:px-5"
             >
               Criar conta
             </Link>
@@ -113,7 +114,7 @@ export default function Hero() {
             <label htmlFor="claim" className="text-sm opacity-75">
               Escolha o seu
             </label>
-            <div className="mt-2 flex items-center gap-2 rounded-full border border-rule bg-surface p-1.5 pl-5 transition-colors focus-within:border-ink" style={{ transitionDuration: "700ms" }}>
+            <div className="mt-2 flex items-center gap-2 rounded-full border border-rule bg-surface p-1.5 pl-5 transition-colors focus-within:border-ink">
               <span className="shrink-0 opacity-50">linqu.es/</span>
               <input
                 id="claim"
@@ -125,7 +126,7 @@ export default function Hero() {
                 spellCheck={false}
                 className="h-11 min-w-0 flex-1 bg-transparent outline-none placeholder:opacity-40"
               />
-              <button className="h-11 shrink-0 rounded-full bg-accent px-5 text-sm font-semibold text-on-accent transition-[background-color,color,opacity] duration-700 hover:opacity-90">
+              <button className="h-11 shrink-0 rounded-full bg-accent px-5 text-sm font-semibold text-on-accent transition-opacity hover:opacity-90">
                 Criar página
               </button>
             </div>

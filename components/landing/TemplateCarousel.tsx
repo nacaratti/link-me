@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const INTERVAL = 4500; // ms em cada modelo
@@ -19,12 +19,32 @@ export default function TemplateCarousel({
   const [paused, setPaused] = useState(false);
   const count = slides.length;
 
+  const touch = useRef<{ x: number; y: number } | null>(null);
+
+  // Troca sozinho; o relógio recomeça a cada troca (inclusive as manuais)
   useEffect(() => {
     if (paused || count < 2) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % count), INTERVAL);
-    return () => clearInterval(id);
-  }, [paused, count]);
+    const id = setTimeout(() => setIndex((i) => (i + 1) % count), INTERVAL);
+    return () => clearTimeout(id);
+  }, [paused, count, index]);
+
+  const go = (step: number) => setIndex((i) => (i + step + count) % count);
+
+  // Arrastar para o lado no celular: só conta se o gesto for mais horizontal que vertical
+  function onTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    touch.current = { x: t.clientX, y: t.clientY };
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const start = touch.current;
+    touch.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+  }
 
   const current = slides[index];
 
@@ -36,7 +56,11 @@ export default function TemplateCarousel({
       aria-roledescription="carrossel"
     >
       {/* Os celulares ficam empilhados; só o atual aparece */}
-      <div className="relative mx-auto grid w-fit">
+      <div
+        className="relative mx-auto grid w-fit touch-pan-y select-none"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         {slides.map((s, i) => (
           <div
             key={s.id}
